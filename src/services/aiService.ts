@@ -1,7 +1,25 @@
 import OpenAI from 'openai';
 import { logger } from '../utils/logger.js';
 
-// AI Service for message personalization using OpenAI API
+/**
+ * AI Service for message personalization using OpenAI API
+ * 
+ * This service provides AI-powered message generation for LinkedIn networking
+ * and cold email campaigns. It uses OpenAI's GPT models to create personalized
+ * messages based on recruiter profiles and user information.
+ * 
+ * @class AIService
+ * @example
+ * ```typescript
+ * const aiService = new AIService();
+ * const message = await aiService.generatePersonalizedMessage(
+ *   recruiterProfile,
+ *   'initial',
+ *   userInfo,
+ *   { tone: 'professional', maxLength: 280 }
+ * );
+ * ```
+ */
 export class AIService {
     private openai: OpenAI;
     private readonly model: string;
@@ -42,6 +60,21 @@ export class AIService {
         }
     };
 
+    /**
+     * Creates an instance of AIService
+     * 
+     * @param {string} [apiKey] - OpenAI API key. If not provided, will use OPENAI_API_KEY environment variable
+     * @param {string} [model='gpt-4-turbo'] - OpenAI model to use for message generation
+     * @throws {Error} When OpenAI API key is not provided or invalid
+     * @example
+     * ```typescript
+     * // Using environment variable
+     * const aiService = new AIService();
+     * 
+     * // Using explicit API key
+     * const aiService = new AIService('sk-...', 'gpt-3.5-turbo');
+     * ```
+     */
     constructor(apiKey?: string, model: string = 'gpt-4-turbo') {
         const key = apiKey || process.env.OPENAI_API_KEY;
 
@@ -55,11 +88,34 @@ export class AIService {
 
     /**
      * Generate a personalized message using OpenAI
-     * @param recruiterProfile - Profile information about the recruiter
-     * @param templateType - Type of template to use (initial, followup, thankyou)
-     * @param userInfo - User's information for personalization
-     * @param options - Additional options for message generation
-     * @returns Promise<string> - Generated personalized message
+     * 
+     * Creates a personalized message based on the recruiter's profile and user information.
+     * The message is generated using AI to find commonalities and create engaging content.
+     * 
+     * @param {IRecruiterProfile} recruiterProfile - Profile information about the target recruiter
+     * @param {('initial'|'followup'|'thankyou')} templateType - Type of message template to use
+     * @param {IUserInfo} userInfo - Your information for personalization
+     * @param {IMessageOptions} [options={}] - Additional options for message generation
+     * @returns {Promise<string>} Generated personalized message
+     * @throws {Error} When message generation fails after retries
+     * @example
+     * ```typescript
+     * const message = await aiService.generatePersonalizedMessage(
+     *   {
+     *     name: 'Sarah Johnson',
+     *     company: 'TechCorp',
+     *     position: 'Senior Software Engineer',
+     *     skills: ['JavaScript', 'React']
+     *   },
+     *   'initial',
+     *   {
+     *     name: 'Alex Chen',
+     *     targetRole: 'Software Engineer',
+     *     skills: ['JavaScript', 'React']
+     *   },
+     *   { tone: 'professional', maxLength: 280 }
+     * );
+     * ```
      */
     async generatePersonalizedMessage(
         recruiterProfile: IRecruiterProfile,
@@ -95,9 +151,19 @@ export class AIService {
 
     /**
      * Analyze recruiter profile to find talking points and commonalities
-     * @param recruiterProfile - Profile information about the recruiter
-     * @param userInfo - User's information
-     * @returns Promise<string[]> - Array of talking points
+     * 
+     * Uses AI to analyze a recruiter's profile and identify potential talking points
+     * and commonalities that can be used for personalized messaging.
+     * 
+     * @param {IRecruiterProfile} recruiterProfile - Profile information about the target recruiter
+     * @param {IUserInfo} userInfo - Your information for comparison
+     * @returns {Promise<string[]>} Array of talking points and commonalities
+     * @throws {Error} When profile analysis fails
+     * @example
+     * ```typescript
+     * const talkingPoints = await aiService.analyzeRecruiterProfile(recruiterProfile, userInfo);
+     * // Returns: ["Shared expertise in JavaScript and React", "Interest in machine learning", ...]
+     * ```
      */
     async analyzeRecruiterProfile(
         recruiterProfile: IRecruiterProfile,
@@ -372,7 +438,14 @@ Format your response as a numbered list of specific, actionable talking points. 
     }
 }
 
-// Interface definitions
+/**
+ * Interface definitions for AI Service
+ */
+
+/**
+ * Represents a recruiter's profile information for AI analysis
+ * @interface IRecruiterProfile
+ */
 export interface IRecruiterProfile {
     name: string;
     company: string;
@@ -389,35 +462,71 @@ export interface IRecruiterProfile {
     endorsements?: string[];
 }
 
+/**
+ * Represents user information for AI personalization
+ * @interface IUserInfo
+ */
 export interface IUserInfo {
+    /** User's full name */
     name: string;
+    /** Target role or position the user is seeking */
     targetRole: string;
+    /** Array of user's skills and technologies */
     skills?: string[];
+    /** Years of experience or experience description */
     experience?: string;
+    /** Educational background */
     education?: string;
+    /** User's location */
     location?: string;
+    /** Current company or employer */
     currentCompany?: string;
+    /** Professional summary or bio */
     summary?: string;
+    /** Notable achievements or accomplishments */
     achievements?: string[];
 }
 
+/**
+ * Options for AI message generation
+ * @interface IMessageOptions
+ */
 export interface IMessageOptions {
+    /** Tone of the message */
     tone?: 'professional' | 'friendly' | 'enthusiastic';
+    /** Maximum character length for the message */
     maxLength?: number;
+    /** Minimum character length for the message */
     minLength?: number;
+    /** Custom prompt to override default generation */
     customPrompt?: string;
+    /** Whether to include emojis in the message */
     includeEmojis?: boolean;
 }
 
+/**
+ * Template structure for message generation
+ * @interface ITemplate
+ */
 export interface ITemplate {
+    /** Template name */
     name: string;
+    /** Template content with placeholders */
     content: string;
+    /** Array of variable names used in the template */
     variables: string[];
 }
 
+/**
+ * Represents a talking point for networking
+ * @interface ITalkingPoint
+ */
 export interface ITalkingPoint {
+    /** Type of talking point */
     type: 'skill' | 'experience' | 'education' | 'company' | 'location' | 'achievement';
+    /** Description of the talking point */
     description: string;
+    /** Relevance level for networking */
     relevance: 'high' | 'medium' | 'low';
 }
 

@@ -1,50 +1,104 @@
-# Job Networking Bot
+# Cold Email Bot
 
-A Node.js CLI tool for job networking automation that helps you connect with professional networks, search for job opportunities, and manage applications.
+A comprehensive Node.js CLI tool for automated LinkedIn networking and cold email campaigns. This bot helps you streamline professional networking by automating connection requests, email outreach, and relationship management.
 
-## Features
+## 🚀 Features
 
-- 🔗 **Connect** to networking platforms (LinkedIn, Indeed, etc.)
-- 🔍 **Search** for job opportunities with customizable filters
-- 📝 **Apply** to job postings automatically or manually
-- 👥 **Network** management for professional contacts
-- 🎨 **Beautiful CLI** with colored output and progress indicators
-- 🗄️ **MongoDB Integration** with Mongoose for data persistence
-- 📊 **Advanced Analytics** with campaign tracking and statistics
-- 📧 **Template System** with variable substitution and validation
-- 📬 **Email Lookup Service** with Hunter.io and RocketReach integration
-- ✅ **Email Verification** with DNS and SMTP validation
-- 🔷 **TypeScript Support** with full type safety and IntelliSense
+### Core Functionality
+- **🔗 LinkedIn Automation**: Automated connection requests with personalized messages
+- **📧 Email Campaigns**: Cold email outreach with professional templates
+- **🤖 AI-Powered Personalization**: OpenAI integration for intelligent message generation
+- **📊 Campaign Management**: Track and analyze your networking campaigns
+- **🎯 Contact Management**: Organize and manage professional contacts
+- **📈 Analytics & Reporting**: Comprehensive statistics and performance tracking
 
-## Installation
+### Advanced Features
+- **🛡️ Rate Limiting & Safety**: Built-in LinkedIn rate limiting and jail detection
+- **📝 Template System**: Customizable message templates with variable substitution
+- **🔍 Email Lookup**: Find email addresses using Hunter.io and RocketReach APIs
+- **📅 Smart Scheduling**: Optimal timing for LinkedIn actions and email sending
+- **🔄 Follow-up Automation**: Automated follow-up sequences
+- **💾 Database Integration**: MongoDB for data persistence and backup
+- **📱 CLI Dashboard**: Real-time monitoring and control interface
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd job-networking-bot
+## 🏗️ Architecture
+
+The Cold Email Bot is built with a modular architecture using TypeScript and Node.js:
+
+```
+cold-email-bot/
+├── src/
+│   ├── commands/          # CLI command implementations
+│   ├── services/          # Core business logic services
+│   ├── models/           # MongoDB data models
+│   ├── config/           # Configuration management
+│   ├── utils/            # Utility functions and helpers
+│   └── types/            # TypeScript type definitions
+├── examples/             # Example usage scripts
+├── docs/                 # Documentation
+└── dist/                 # Compiled JavaScript output
 ```
 
-2. Install dependencies:
+### Key Services
+- **LinkedInService**: LinkedIn automation with Playwright
+- **AIService**: OpenAI-powered message personalization
+- **EmailService**: Email sending with templates and tracking
+- **TemplateService**: Message template management
+- **DatabaseService**: MongoDB operations and data management
+- **RateLimiter**: LinkedIn and email rate limiting
+- **SchedulerService**: Automated follow-up scheduling
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js 14+ 
+- MongoDB (local or cloud)
+- LinkedIn account with 2FA enabled
+- OpenAI API key
+- Email service credentials (Gmail, Outlook, or SMTP)
+
+### Quick Start
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/yourusername/cold-email-bot.git
+cd cold-email-bot
+```
+
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. Set up environment variables:
+3. **Set up environment variables:**
 ```bash
-cp .env.example .env
+cp env.example .env
 # Edit .env with your actual API keys and configuration
 ```
 
-4. Set up MongoDB (if not already running):
+4. **Set up MongoDB:**
 ```bash
-# Using Docker
+# Option 1: Using Docker (Recommended)
 docker run -d -p 27017:27017 --name mongodb mongo:latest
 
-# Or install MongoDB locally
+# Option 2: Local installation
 # Follow instructions at https://docs.mongodb.com/manual/installation/
+
+# Option 3: MongoDB Atlas (Cloud)
+# Create account at https://cloud.mongodb.com
 ```
 
-## Usage
+5. **Build the project:**
+```bash
+npm run build
+```
+
+6. **Test your configuration:**
+```bash
+npm start test --all
+```
+
+## 🚀 Usage
 
 ### Development Mode
 
@@ -59,832 +113,425 @@ npm run build
 npm start
 ```
 
-### Basic Commands
+### CLI Commands
 
+#### Campaign Management
 ```bash
-# Show help
-npm start -- --help
+# Start a new campaign
+cold-email-bot start --campaign "Tech Recruiters Q1" --keywords "recruiter" --location "San Francisco" --max-contacts 50
 
-# Connect to networking platforms
-npm start -- connect --platform linkedin
+# Search for contacts
+cold-email-bot search --keywords "software engineer" --location "Remote" --max-results 20 --output contacts.json
 
-# Search for jobs
-npm start -- search --keywords "javascript developer" --location "remote"
+# Send connection requests
+cold-email-bot connect --campaign "Tech Recruiters Q1" --max-requests 10 --dry-run
+```
 
-# Apply to jobs
-npm start -- apply --job-id 12345
-npm start -- apply --auto
+#### Email Campaigns
+```bash
+# Send follow-up emails
+cold-email-bot followup --campaign "Tech Recruiters Q1" --type followup --max-emails 5
 
-# Manage network
-npm start -- network --add contact@example.com
-npm start -- network --list
+# Process scheduled emails
+cold-email-bot followup --type thankyou --max-emails 10
+```
 
-# Database management
-npm start -- db:init          # Initialize database connection
-npm start -- db:health        # Check database health
-npm start -- db:stats         # Show database statistics
+#### Contact Management
+```bash
+# List all contacts
+cold-email-bot contacts list --status connected --campaign "Tech Recruiters Q1"
+
+# Export contacts
+cold-email-bot contacts export --format csv --output contacts.csv
+
+# Update contact information
+cold-email-bot contacts update --filter "company:Google" --field status --value contacted
+```
+
+#### Template Management
+```bash
+# List all templates
+cold-email-bot templates list --type connection
+
+# Create new template
+cold-email-bot templates add --name "Software Engineer Outreach" --type connection --content "Hi {{name}}..."
+
+# Test template
+cold-email-bot templates test --id template123 --variables '{"name":"John","company":"Google"}'
+```
+
+#### Configuration
+```bash
+# Set API keys
+cold-email-bot config set --key OPENAI_API_KEY --value your-api-key
+
+# Validate configuration
+cold-email-bot config validate
+
+# List all settings
+cold-email-bot config list
+```
+
+#### System Monitoring
+```bash
+# Show dashboard
+cold-email-bot dashboard --refresh 30
+
+# System status
+cold-email-bot system status
+
+# Database health
+cold-email-bot system db-health
+
+# Process monitoring
+cold-email-bot system monitor
+```
+
+#### Testing
+```bash
+# Test all services
+cold-email-bot test --all
+
+# Test specific services
+cold-email-bot test --linkedin --ai --email
+
+# Test database connection
+cold-email-bot test --database
 ```
 
 ### Global Options
 
 - `-v, --verbose`: Enable verbose logging
 - `--config <path>`: Specify config file path (default: ".env")
+- `--dry-run`: Simulate actions without executing them
+- `--headless`: Run browser in headless mode
 
-## Project Structure
+## ⚙️ Configuration
 
-```
-job-networking-bot/
-├── src/
-│   ├── commands/     # CLI command implementations
-│   ├── services/     # External API services
-│   ├── models/       # Data models
-│   ├── utils/        # Utility functions
-│   └── config/       # Configuration files
-├── index.js          # Main CLI entry point
-├── package.json      # Project configuration
-├── .env.example      # Environment variables template
-└── .gitignore        # Git ignore rules
-```
+### Environment Variables
 
-## Configuration
-
-Copy `.env.example` to `.env` and configure the following:
-
-- **LinkedIn API**: Client ID, Client Secret, Redirect URI
-- **Indeed API**: Publisher ID, API Key
-- **Email Settings**: SMTP configuration for notifications
-- **Database**: Connection string (if using local database)
-- **Application Settings**: Rate limits, file paths, etc.
-
-## Development
+Create a `.env` file from the template:
 
 ```bash
+cp env.example .env
+```
+
+#### Required Configuration
+
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/cold-email-bot
+
+# LinkedIn Credentials
+LINKEDIN_EMAIL=your-email@domain.com
+LINKEDIN_PASSWORD=your-password
+
+# OpenAI API
+OPENAI_API_KEY=your-openai-api-key
+
+# Email Service
+EMAIL_FROM=your-email@domain.com
+EMAIL_PROVIDER=gmail
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+
+# Email Lookup APIs (Optional)
+HUNTER_API_KEY=your-hunter-io-api-key
+ROCKETREACH_API_KEY=your-rocketreach-api-key
+```
+
+#### Advanced Configuration
+
+```env
+# Rate Limiting
+LINKEDIN_MAX_CONNECTIONS_PER_DAY=20
+LINKEDIN_MAX_MESSAGES_PER_DAY=10
+EMAIL_MAX_PER_HOUR=50
+
+# Safety & Monitoring
+ERROR_EMAIL_ENABLED=true
+ERROR_EMAIL_RECIPIENTS=admin@domain.com
+BACKUP_ENABLED=true
+DEBUG_MODE=false
+
+# Timing
+OPTIMAL_START_HOUR=9
+OPTIMAL_END_HOUR=18
+TIMEZONE=America/New_York
+```
+
+### API Keys Setup
+
+#### 1. OpenAI API Key
+1. Visit [OpenAI API](https://platform.openai.com/api-keys)
+2. Create a new API key
+3. Add to your `.env` file
+
+#### 2. Email Service Setup
+
+**Gmail:**
+1. Enable 2-factor authentication
+2. Generate an App Password
+3. Use the App Password in `EMAIL_PASS`
+
+**Outlook:**
+1. Use your regular password
+2. Set `EMAIL_PROVIDER=outlook`
+
+#### 3. Email Lookup APIs (Optional)
+
+**Hunter.io:**
+1. Sign up at [Hunter.io](https://hunter.io)
+2. Get your API key from dashboard
+3. Add to `HUNTER_API_KEY`
+
+**RocketReach:**
+1. Sign up at [RocketReach](https://rocketreach.co)
+2. Get your API key from settings
+3. Add to `ROCKETREACH_API_KEY`
+
+## 📚 Examples
+
+### Basic Campaign Workflow
+
+1. **Start a LinkedIn campaign:**
+```bash
+cold-email-bot start --campaign "Software Engineers" --keywords "software engineer" --location "San Francisco Bay Area" --max-contacts 30
+```
+
+2. **Send connection requests:**
+```bash
+cold-email-bot connect --campaign "Software Engineers" --max-requests 10
+```
+
+3. **Send follow-up emails:**
+```bash
+cold-email-bot followup --campaign "Software Engineers" --type followup --max-emails 5
+```
+
+4. **Monitor progress:**
+```bash
+cold-email-bot dashboard
+```
+
+### Advanced Examples
+
+#### Custom Template Campaign
+```bash
+# Create custom template
+cold-email-bot templates add --name "React Developer Outreach" --type connection --content "Hi {{name}}, I noticed your React work at {{company}}. Would love to connect about opportunities!"
+
+# Use template in campaign
+cold-email-bot connect --campaign "React Developers" --template "React Developer Outreach" --max-requests 15
+```
+
+#### Email Lookup Integration
+```bash
+# Search contacts with email lookup
+cold-email-bot search --keywords "product manager" --enable-email-lookup --output contacts.json
+
+# Send emails to found contacts
+cold-email-bot followup --source contacts.json --type coldOutreach --verify-emails
+```
+
+#### Automated Follow-up Sequence
+```bash
+# Schedule multiple follow-ups
+cold-email-bot followup --campaign "Q1 Outreach" --schedule "3d,7d,14d" --type followup
+```
+
+## 🛡️ Best Practices
+
+### LinkedIn Safety
+- **Start Small**: Begin with 5-10 connection requests per day
+- **Use Dry Run**: Always test with `--dry-run` first
+- **Respect Limits**: Never exceed daily limits
+- **Monitor Activity**: Check dashboard regularly
+- **Human-like Behavior**: Use built-in delays and randomization
+
+### Email Best Practices
+- **Personalize Messages**: Use AI-generated personalized content
+- **Verify Emails**: Always verify email addresses before sending
+- **Respect Unsubscribes**: Honor unsubscribe requests immediately
+- **Monitor Deliverability**: Track open rates and bounces
+- **Follow CAN-SPAM**: Include unsubscribe links and sender info
+
+### Campaign Management
+- **Segment Contacts**: Use different campaigns for different audiences
+- **Track Performance**: Monitor connection rates and response rates
+- **A/B Test Templates**: Test different message templates
+- **Regular Cleanup**: Remove inactive contacts and update statuses
+- **Backup Data**: Enable automatic database backups
+
+## 🔧 Development
+
+### Local Development
+```bash
+# Install dependencies
+npm install
+
 # Run in development mode with auto-reload
 npm run dev
 
-# Run specific command
-node index.js <command> [options]
+# Build TypeScript
+npm run build
+
+# Run tests
+npm test
+
+# Lint code
+npm run lint
 ```
 
-## Dependencies
+### Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
 
-- **commander**: CLI framework
-- **inquirer**: Interactive prompts
-- **chalk**: Terminal string styling
-- **ora**: Elegant terminal spinners
+## 📦 Dependencies
+
+### Core Dependencies
+- **commander**: CLI framework and command parsing
+- **inquirer**: Interactive prompts for user input
+- **chalk**: Terminal string styling and colors
+- **ora**: Elegant terminal spinners and progress indicators
 - **dotenv**: Environment variable loading
-- **mongoose**: MongoDB object modeling
+- **mongoose**: MongoDB object modeling and database operations
 - **openai**: OpenAI API client for AI-powered message personalization
 - **playwright**: Browser automation for LinkedIn scraping
+- **nodemailer**: Email sending functionality
+- **validator**: Email validation utilities
+- **winston**: Advanced logging system
 
 ### Development Dependencies
-
-- **typescript**: TypeScript compiler
+- **typescript**: TypeScript compiler and type checking
 - **@types/node**: Node.js type definitions
 - **@types/inquirer**: Inquirer type definitions
 - **ts-node**: TypeScript execution for Node.js
 - **nodemon**: Development server with auto-reload
-- **rimraf**: Cross-platform rm -rf utility
-- **eslint**: JavaScript/TypeScript linter
+- **rimraf**: Cross-platform file removal utility
+- **eslint**: JavaScript/TypeScript code linting
 
-## Data Models
+## 📊 Data Models
 
-### Contact
-- Personal information (name, email, LinkedIn URL)
-- Professional details (company, position, industry)
-- Status tracking (pending, connected, responded)
-- Conversation history and notes
-- Tags and source tracking
-
-### Template
-- Message templates with variable substitution
-- Support for different types (connection, follow-up, thank you)
-- Variable validation and type checking
-- Usage tracking and versioning
-
-### Campaign
-- Target criteria and filtering
-- Performance statistics and analytics
-- Contact management and tracking
-- Automated scheduling and rate limiting
-
-## LinkedIn Automation
-
-The bot includes a powerful LinkedIn automation service built with Playwright that can:
-
-- **Login with 2FA Support**: Handles manual 2FA code entry
-- **Session Persistence**: Saves cookies to avoid repeated logins
-- **Recruiter Search**: Search for recruiters with advanced filters
-- **Profile Scraping**: Extract detailed profile information
-- **Human-like Behavior**: Random delays and stealth measures
-- **Error Handling**: Robust error handling for network issues and rate limits
-
-### LinkedIn Service Features
-
-#### Login & Authentication
-- Automatic login with email/password
-- 2FA support with manual code entry
-- Session persistence using cookies
-- Stealth mode to avoid detection
-
-#### Search Capabilities
-- Search by keywords, location, industry, company
-- Configurable result limits
-- Advanced filtering options
-- Automatic pagination handling
-
-#### Profile Scraping
-- Extract name, headline, company, about section
-- Get location and connection count
-- Scrape work experience
-- Handle profile variations and edge cases
-
-#### Safety Features
-- Random delays (2-5 seconds) between actions
-- Rate limiting and error recovery
-- Stealth browser configuration
-- Comprehensive error handling
-
-### Usage Example
-
+### Contact Model
 ```typescript
-import { LinkedInService, LinkedInCredentials, SearchFilters } from './src/services/linkedinService.js';
-
-const linkedinService = new LinkedInService({
-  headless: false, // Set to true for production
-  timeout: 30000
-});
-
-// Login
-const credentials: LinkedInCredentials = {
-  email: 'your-email@example.com',
-  password: 'your-password'
-};
-
-await linkedinService.login(credentials);
-
-// Search for recruiters
-const searchFilters: SearchFilters = {
-  keywords: 'recruiter',
-  location: 'United States',
-  industry: 'Information Technology and Services',
-  maxResults: 10
-};
-
-const recruiterUrls = await linkedinService.searchRecruiters(searchFilters);
-
-// Scrape profiles
-const profiles = await linkedinService.scrapeProfiles(recruiterUrls);
-
-// Clean up
-await linkedinService.close();
+interface Contact {
+  name: string;
+  email?: string;
+  linkedinUrl: string;
+  company: string;
+  position: string;
+  industry?: string;
+  status: 'pending' | 'connected' | 'responded' | 'rejected';
+  campaignId: string;
+  connectionDate?: Date;
+  lastContact?: Date;
+  notes?: string;
+  tags?: string[];
+  emailLookup?: {
+    foundEmail?: string;
+    confidence?: number;
+    source?: string;
+    verified?: boolean;
+  };
+}
 ```
 
-### Running LinkedIn Examples
-
-```bash
-# Run the LinkedIn automation example
-npm run linkedin:example
-
-# Or run directly with ts-node
-npx ts-node examples/linkedin-example.ts
-```
-
-## AI-Powered Message Personalization
-
-The bot includes an advanced AI service powered by OpenAI that can generate personalized messages for networking:
-
-### AI Service Features
-
-- **OpenAI Integration**: Uses GPT-4-turbo or GPT-3.5-turbo for intelligent message generation
-- **Template System**: Built-in templates for initial connection, follow-up, and thank you messages
-- **Variable Substitution**: Dynamic placeholders like {name}, {company}, {position}, {commonality}
-- **Profile Analysis**: Automatically analyzes recruiter profiles to find talking points
-- **Tone Control**: Professional, friendly, or enthusiastic message tones
-- **Length Validation**: Ensures messages stay within LinkedIn's 200-300 character limit
-- **Retry Logic**: Built-in error handling and retry mechanisms
-
-### AI Service Usage
-
+### Template Model
 ```typescript
-import { AIService, IRecruiterProfile, IUserInfo } from './src/services/aiService.js';
-
-// Initialize AI service
-const aiService = new AIService();
-
-// Define recruiter profile
-const recruiterProfile: IRecruiterProfile = {
-  name: 'Sarah Johnson',
-  company: 'TechCorp',
-  position: 'Senior Software Engineer',
-  industry: 'Technology',
-  skills: ['JavaScript', 'React', 'Node.js'],
-  experience: '5 years',
-  recentActivity: 'Recently posted about machine learning trends'
-};
-
-// Define your information
-const userInfo: IUserInfo = {
-  name: 'Alex Chen',
-  targetRole: 'Software Engineer',
-  skills: ['JavaScript', 'React', 'Node.js'],
-  experience: '3 years'
-};
-
-// Generate personalized message
-const message = await aiService.generatePersonalizedMessage(
-  recruiterProfile,
-  'initial',
-  userInfo,
-  { tone: 'professional', maxLength: 280 }
-);
-
-console.log(message);
-// Output: "Hi Sarah! I noticed your work at TechCorp in Senior Software Engineer. 
-// I'm impressed by your expertise in JavaScript and React, and would love to 
-// connect to learn more about your experience with machine learning projects."
+interface Template {
+  name: string;
+  type: 'connection' | 'followup' | 'thankyou' | 'coldOutreach';
+  content: string;
+  variables: string[];
+  category: string;
+  tags?: string[];
+  usageCount: number;
+  successRate?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
 
-### Message Templates
-
-The service includes three default templates:
-
-#### Initial Connection
-```
-Hi {name}! I noticed your work at {company} in {position}. 
-I'm impressed by {commonality} and would love to connect 
-to learn more about your experience.
-```
-
-#### Follow-up Message
-```
-Hi {name}, I hope you're doing well! I wanted to follow up 
-on my previous message about {commonality}. Would you be 
-open to a brief conversation about {position} opportunities?
-```
-
-#### Thank You Message
-```
-Thank you for connecting, {name}! I really appreciate you 
-taking the time to share insights about {commonality} at 
-{company}. Looking forward to staying in touch!
-```
-
-### Profile Analysis
-
-The service can analyze recruiter profiles to find relevant talking points:
-
+### Campaign Model
 ```typescript
-const talkingPoints = await aiService.analyzeRecruiterProfile(
-  recruiterProfile, 
-  userInfo
-);
-
-// Returns array of talking points like:
-// [
-//   "Shared expertise in JavaScript and React",
-//   "Interest in machine learning and emerging technologies",
-//   "Experience with scalable web applications"
-// ]
+interface Campaign {
+  name: string;
+  description?: string;
+  targetCriteria: {
+    keywords?: string[];
+    location?: string;
+    industry?: string;
+    company?: string;
+  };
+  status: 'active' | 'paused' | 'completed';
+  contacts: string[]; // Contact IDs
+  templates: string[]; // Template IDs
+  statistics: {
+    totalContacts: number;
+    connectionsSent: number;
+    connectionsAccepted: number;
+    emailsSent: number;
+    emailsOpened: number;
+    responses: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
 
-### Tone Options
+## 🚨 Important Notes
 
-- **Professional**: Formal and business-focused
-- **Friendly**: Warm and approachable  
-- **Enthusiastic**: Energetic and passionate
-
-### Running AI Examples
-
-```bash
-# Run the AI service example
-npm run ai:example
-
-# Or run directly with ts-node
-npx ts-node examples/ai-example.ts
-```
-
-## Template Management Service
-
-The bot includes a comprehensive template management service for creating, testing, and managing message templates:
-
-### Template Service Features
-
-- **CRUD Operations**: Create, read, update, and delete templates
-- **Template Testing**: Test templates with sample data before use
-- **Variable Validation**: Automatic validation of template variables and character limits
-- **Database Integration**: Full MongoDB integration for template persistence
-- **Scenario Categorization**: Organize templates by type, category, and tags
-- **Template Versioning**: Track template changes and maintain version history
-- **Search & Filtering**: Find templates by keywords, type, or category
-
-### Template Service Usage
-
-```typescript
-import { TemplateService } from './src/services/templateService.js';
-
-// Initialize template service
-const templateService = new TemplateService();
-
-// Create a new template
-const template = await templateService.createTemplate({
-  name: 'Software Engineer Outreach',
-  type: TemplateType.CONNECTION,
-  content: 'Hi {{name}}! I noticed your work with {{technology}} at {{company}}.',
-  variables: [
-    { name: 'name', type: VariableType.STRING, required: true },
-    { name: 'technology', type: VariableType.STRING, required: true },
-    { name: 'company', type: VariableType.STRING, required: true }
-  ],
-  category: TemplateCategory.NETWORKING,
-  tags: ['linkedin', 'software', 'engineering']
-});
-
-// Test template with sample data
-const testResult = await templateService.testTemplate(template._id, {
-  name: 'Sarah Johnson',
-  technology: 'React and Node.js',
-  company: 'TechCorp'
-});
-
-console.log(testResult.renderedContent);
-// Output: "Hi Sarah Johnson! I noticed your work with React and Node.js at TechCorp."
-```
-
-### Template Operations
-
-#### Create Template
-```typescript
-const template = await templateService.createTemplate({
-  name: 'Template Name',
-  type: TemplateType.CONNECTION,
-  content: 'Message with {{variable}} placeholders',
-  variables: [
-    { name: 'variable', type: VariableType.STRING, required: true }
-  ],
-  category: TemplateCategory.NETWORKING
-});
-```
-
-#### Test Template
-```typescript
-const result = await templateService.testTemplate(templateId, {
-  variable: 'sample value'
-});
-
-console.log(result.success); // true/false
-console.log(result.renderedContent); // rendered message
-console.log(result.validationErrors); // array of errors
-console.log(result.characterCount); // character count
-```
-
-#### Search Templates
-```typescript
-const templates = await templateService.searchTemplates('software');
-const byType = await templateService.getTemplatesByType(TemplateType.CONNECTION);
-const byCategory = await templateService.getTemplatesByCategory(TemplateCategory.NETWORKING);
-```
-
-#### Get Templates by Scenario
-```typescript
-const scenario: IScenario = {
-  type: TemplateType.CONNECTION,
-  category: TemplateCategory.NETWORKING,
-  tags: ['linkedin'],
-  platform: 'linkedin'
-};
-
-const templates = await templateService.getTemplatesByScenario(scenario);
-```
-
-### Template Validation
-
-The service automatically validates:
-- **Character Limits**: Ensures messages stay within LinkedIn's limits (200-300 chars)
-- **Required Variables**: Checks that all required variables are provided
-- **Variable Types**: Validates variable types (string, number, date, boolean, array)
-- **Template Syntax**: Ensures proper variable bracket syntax `{{variable}}`
-
-### Default Templates
-
-The service includes three default templates:
-- **LinkedIn Initial Connection**: Professional first contact message
-- **LinkedIn Follow-up Message**: Polite follow-up for previous conversations  
-- **LinkedIn Thank You Message**: Appreciation message after connecting
-
-### Running Template Examples
-
-```bash
-# Run the template service example
-npm run template:example
-
-# Or run directly with ts-node
-npx ts-node examples/template-example.ts
-```
-
-## Email Service
-
-The bot includes a comprehensive email service with Nodemailer integration for sending professional emails:
-
-### Email Service Features
-
-- **SMTP Integration**: Support for Gmail, Outlook, and custom SMTP servers
-- **HTML Templates**: Professional email templates with responsive design
-- **Email Tracking**: Open rate tracking using tracking pixels
-- **Unsubscribe Handling**: Built-in unsubscribe link management
-- **Rate Limiting**: Respects ESP limits to avoid being flagged as spam
-- **Email Validation**: Validates email addresses before sending
-- **Bulk Sending**: Send multiple emails with rate limiting and delays
-- **Template System**: Pre-built templates for cold outreach, follow-up, and thank you emails
-
-### Email Service Usage
-
-```typescript
-import { EmailService, IEmailConfig, IEmailData } from './src/services/emailService.js';
-
-// Configure email service
-const emailConfig: IEmailConfig = {
-  provider: 'gmail',
-  credentials: {
-    email: 'your-email@gmail.com',
-    password: 'your-app-password'
-  },
-  trackingBaseUrl: 'https://your-domain.com/track',
-  unsubscribeBaseUrl: 'https://your-domain.com/unsubscribe',
-  rateLimit: {
-    maxEmailsPerHour: 50,
-    windowMs: 60 * 60 * 1000
-  }
-};
-
-// Initialize email service
-const emailService = new EmailService(emailConfig);
-
-// Send single email
-const emailData: IEmailData = {
-  to: 'recipient@example.com',
-  templateType: 'coldOutreach',
-  variables: {
-    name: 'Sarah Johnson',
-    company: 'TechCorp',
-    position: 'Senior Software Engineer',
-    technology: 'React and Node.js',
-    topic: 'scalable web applications',
-    industry: 'technology',
-    senderName: 'Alex Chen'
-  },
-  campaignId: 'campaign-001'
-};
-
-const result = await emailService.sendEmail(emailData);
-console.log(result.success ? 'Email sent!' : 'Failed to send email');
-```
-
-### Email Templates
-
-The service includes three professional email templates:
-
-#### Cold Outreach Email
-- Professional first contact message
-- Personalized with company, position, and technology details
-- Includes tracking pixel and unsubscribe link
-
-#### Follow-up Email
-- Polite follow-up for previous conversations
-- Maintains professional tone while being persistent
-- Includes relevant industry insights
-
-#### Thank You Email
-- Appreciation message after connecting
-- Acknowledges specific insights shared
-- Maintains relationship for future collaboration
-
-### SMTP Configuration
-
-#### Gmail Setup
-```typescript
-const gmailConfig: IEmailConfig = {
-  provider: 'gmail',
-  credentials: {
-    email: 'your-email@gmail.com',
-    password: 'your-app-password' // Use App Password, not regular password
-  }
-};
-```
-
-#### Outlook Setup
-```typescript
-const outlookConfig: IEmailConfig = {
-  provider: 'outlook',
-  credentials: {
-    email: 'your-email@outlook.com',
-    password: 'your-password'
-  }
-};
-```
-
-#### Custom SMTP Setup
-```typescript
-const customConfig: IEmailConfig = {
-  provider: 'custom',
-  credentials: {
-    email: 'your-email@yourdomain.com',
-    password: 'your-password',
-    host: 'smtp.yourdomain.com',
-    port: 587,
-    secure: false
-  }
-};
-```
-
-### Email Tracking
-
-The service includes comprehensive tracking features:
-
-```typescript
-// Track email opens
-await emailService.trackEmailOpen(trackingId);
-
-// Handle unsubscribes
-await emailService.handleUnsubscribe(trackingId);
-
-// Get email statistics
-const stats = await emailService.getEmailStats('campaign-001');
-console.log(`Open rate: ${(stats.openRate * 100).toFixed(2)}%`);
-```
-
-### Bulk Email Sending
-
-```typescript
-const bulkEmails: IEmailData[] = [
-  {
-    to: 'recipient1@example.com',
-    templateType: 'coldOutreach',
-    variables: { /* ... */ }
-  },
-  {
-    to: 'recipient2@example.com',
-    templateType: 'coldOutreach',
-    variables: { /* ... */ }
-  }
-];
-
-const results = await emailService.sendBulkEmails(bulkEmails, {
-  delayBetweenEmails: 2000, // 2 seconds between emails
-  maxConcurrent: 5
-});
-```
-
-### Rate Limiting
-
-The service includes built-in rate limiting to respect ESP limits:
-
-- **Gmail**: 50 emails per hour (configurable)
-- **Outlook**: 30 emails per hour (configurable)
-- **Custom SMTP**: 100 emails per hour (configurable)
-- **Automatic delays** between bulk emails
-- **Per-email rate limiting** to avoid spam detection
-
-### Email Validation
-
-```typescript
-// Validate email addresses
-const isValid = emailService.validateEmail('test@example.com');
-console.log(isValid); // true/false
-```
-
-### Running Email Examples
-
-```bash
-# Run the email service example
-npm run email:example
-
-# Or run directly with ts-node
-npx ts-node examples/email-example.ts
-```
-
-## Email Lookup Service
-
-The bot includes a comprehensive email lookup service that integrates with Hunter.io and RocketReach APIs to find and verify email addresses:
-
-### Email Lookup Features
-
-- **Multi-API Integration**: Supports Hunter.io and RocketReach APIs
-- **Email Verification**: Validates email addresses using DNS and SMTP checks
-- **Database Caching**: Saves found emails to reduce API calls and costs
-- **Fallback Patterns**: Generates common email formats when APIs fail
-- **Confidence Scoring**: Provides confidence levels for found emails
-- **Rate Limiting**: Built-in rate limiting for API calls
-
-### Email Lookup Usage
-
-```typescript
-import EmailLookupService from './src/services/emailLookupService.js';
-
-// Initialize email lookup service
-const emailLookupService = new EmailLookupService({
-    hunterApiKey: process.env.HUNTER_API_KEY,
-    rocketReachApiKey: process.env.ROCKETREACH_API_KEY
-});
-
-// Find email address
-const result = await emailLookupService.findEmail(
-    'John',
-    'Doe',
-    'google.com',
-    {
-        preferHunter: true,
-        verifyEmail: true,
-        enableFallback: true
-    }
-);
-
-console.log(result);
-// {
-//     email: 'john.doe@google.com',
-//     confidence: 85,
-//     source: 'hunter',
-//     method: 'api',
-//     verified: true,
-//     metadata: { ... }
-// }
-```
-
-### Integrated Email Service with Lookup
-
-```typescript
-import { EmailService } from './src/services/emailService.js';
-
-// Configure email service with lookup
-const emailConfig: IEmailConfig = {
-  provider: 'gmail',
-  credentials: {
-    email: 'your-email@gmail.com',
-    password: 'your-app-password'
-  },
-  emailLookup: {
-    hunterApiKey: process.env.HUNTER_API_KEY,
-    rocketReachApiKey: process.env.ROCKETREACH_API_KEY
-  }
-};
-
-const emailService = new EmailService(emailConfig);
-
-// Send email with automatic lookup
-const result = await emailService.sendEmailWithLookup({
-  to: 'placeholder@example.com', // Will be replaced by lookup
-  templateType: 'coldOutreach',
-  variables: { /* ... */ },
-  enableLookup: true,
-  lookupData: {
-    firstName: 'John',
-    lastName: 'Doe',
-    company: 'google.com'
-  },
-  minConfidence: 70,
-  verifyBeforeSend: true
-});
-```
-
-### Fallback Email Patterns
-
-When APIs fail, the service generates common email patterns:
-- `firstName.lastName@domain.com`
-- `firstNameLastName@domain.com`
-- `f.lastName@domain.com`
-- `firstName.l@domain.com`
-- And more variations...
-
-### Database Integration
-
-Email lookup results are automatically cached in the database:
-
-```typescript
-// Find contacts by email lookup source
-const hunterContacts = await Contact.findByEmailLookupSource('hunter');
-
-// Find contacts with unverified emails
-const unverifiedContacts = await Contact.findUnverifiedEmails();
-
-// Update email lookup data
-await contact.updateEmailLookup({
-    foundEmail: 'new.email@company.com',
-    confidence: 90,
-    verified: true
-});
-```
-
-### Running Email Lookup Examples
-
-```bash
-# Run the email lookup service example
-npm run email-lookup:example
-
-# Or run directly with ts-node
-npx ts-node examples/email-lookup-example.ts
-```
-
-### Environment Variables
-
-Create a `.env` file with your API credentials:
-
-```env
-# LinkedIn credentials
-LINKEDIN_EMAIL=your-email@example.com
-LINKEDIN_PASSWORD=your-password
-
-# OpenAI API key for AI message personalization
-OPENAI_API_KEY=your-openai-api-key
-
-# Email service credentials
-GMAIL_EMAIL=your-email@gmail.com
-GMAIL_APP_PASSWORD=your-app-password
-OUTLOOK_EMAIL=your-email@outlook.com
-OUTLOOK_PASSWORD=your-password
-SMTP_EMAIL=your-email@yourdomain.com
-SMTP_PASSWORD=your-password
-SMTP_HOST=smtp.yourdomain.com
-SMTP_PORT=587
-SMTP_SECURE=false
-
-# Email lookup API keys
-HUNTER_API_KEY=your-hunter-io-api-key
-ROCKETREACH_API_KEY=your-rocketreach-api-key
-
-# Database connection (optional)
-MONGODB_URI=mongodb://localhost:27017/job-networking-bot
-```
-
-### Important Notes
-
+### Legal and Ethical Usage
 ⚠️ **Use Responsibly**: This tool is for educational and legitimate networking purposes only. Always respect LinkedIn's Terms of Service and rate limits.
-
-⚠️ **2FA Required**: The service supports manual 2FA code entry. You'll need to enter the code when prompted.
 
 ⚠️ **Rate Limiting**: The service includes built-in delays and error handling, but be mindful of LinkedIn's rate limits.
 
-## Examples
+⚠️ **2FA Required**: The service supports manual 2FA code entry. You'll need to enter the code when prompted.
 
-Run the database example to see the models in action:
+### Support and Troubleshooting
+
+#### Common Issues
+1. **LinkedIn Login Issues**: Ensure 2FA is enabled and use manual code entry
+2. **Rate Limiting**: Reduce daily limits and increase delays between actions
+3. **Email Delivery**: Check spam folders and verify email credentials
+4. **Database Connection**: Ensure MongoDB is running and accessible
+
+#### Getting Help
+- Check the [documentation](docs/)
+- Review [examples](examples/)
+- Open an issue on GitHub
+- Check logs in the `logs/` directory
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
 ```bash
-# Using ts-node (development)
-npx ts-node --esm examples/database-example.ts
+# Clone and setup
+git clone https://github.com/yourusername/cold-email-bot.git
+cd cold-email-bot
+npm install
 
-# Using compiled JavaScript
-npm run build
-node examples/database-example.js
+# Run in development mode
+npm run dev
+
+# Run tests
+npm test
 ```
 
-Run the LinkedIn automation example:
-```bash
-# Using ts-node (development)
-npm run linkedin:example
+## 🙏 Acknowledgments
 
-# Using compiled JavaScript
-npm run build
-node dist/examples/linkedin-example.js
-```
+- [OpenAI](https://openai.com) for AI-powered message personalization
+- [Playwright](https://playwright.dev) for browser automation
+- [MongoDB](https://mongodb.com) for data persistence
+- [Commander.js](https://github.com/tj/commander.js) for CLI framework
 
-Run the AI service example:
-```bash
-# Using ts-node (development)
-npm run ai:example
-
-# Using compiled JavaScript
-npm run build
-node dist/examples/ai-example.js
-```
-
-Run the template service example:
-```bash
-# Using ts-node (development)
-npm run template:example
-
-# Using compiled JavaScript
-npm run build
-node dist/examples/template-example.js
-```
-
-Run the email service example:
-```bash
-# Using ts-node (development)
-npm run email:example
-
-# Using compiled JavaScript
-npm run build
-node dist/examples/email-example.js
-```
-
-Run the email lookup service example:
-```bash
-# Using ts-node (development)
-npm run email-lookup:example
-
-# Using compiled JavaScript
-npm run build
-node dist/examples/email-lookup-example.js
-```
-
-## License
-
-MIT
