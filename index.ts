@@ -8,6 +8,7 @@ import { createLinkedInCommand } from './src/commands/linkedin.js';
 import { SchedulerService, ISchedulerConfig } from './src/services/schedulerService.js';
 import { EmailService } from './src/services/emailService.js';
 import { LinkedInService } from './src/services/linkedinService.js';
+import conversationService from './src/services/conversationService.js';
 
 // Load environment variables
 dotenv.config();
@@ -228,6 +229,108 @@ program
       // TODO: Implement status checking via API or file
     } catch (error) {
       console.error(chalk.red('❌ Failed to get scheduler status:'), (error as Error).message);
+    }
+  });
+
+// Conversation management commands
+program
+  .command('conversation:analyze <contactId>')
+  .description('Analyze conversation history for a specific contact')
+  .action(async (contactId: string) => {
+    try {
+      await databaseService.initialize();
+
+      console.log(chalk.blue(`📊 Analyzing conversation for contact ${contactId}...`));
+
+      const contact = await databaseService.getContactById(contactId);
+      if (!contact) {
+        console.error(chalk.red(`Contact with ID ${contactId} not found`));
+        return;
+      }
+
+      console.log(chalk.cyan(`Contact: ${contact.name} at ${contact.company || 'Unknown Company'}`));
+
+      // Get conversation metrics
+      const metrics = await conversationService.getConversationMetrics(contactId);
+      console.log(chalk.cyan('\n📈 Conversation Metrics:'));
+      console.log(chalk.gray(`   Total Interactions: ${metrics.totalInteractions}`));
+      console.log(chalk.gray(`   Response Rate: ${metrics.responseRate.toFixed(1)}%`));
+      console.log(chalk.gray(`   Positive Response Rate: ${metrics.positiveResponseRate.toFixed(1)}%`));
+      console.log(chalk.gray(`   Engagement Score: ${metrics.engagementScore.toFixed(1)}/100`));
+
+      // Generate summary
+      const summary = await conversationService.generateConversationSummary(contactId);
+      console.log(chalk.cyan('\n📋 Conversation Summary:'));
+      console.log(chalk.gray(`   Summary: ${summary.summary}`));
+      console.log(chalk.gray(`   Sentiment: ${summary.sentiment}`));
+
+      if (summary.keyPoints.length > 0) {
+        console.log(chalk.gray('   Key Points:'));
+        summary.keyPoints.forEach(point => {
+          console.log(chalk.gray(`     - ${point}`));
+        });
+      }
+
+      console.log(chalk.green('\n✅ Analysis completed'));
+
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to analyze conversation:'), (error as Error).message);
+    }
+  });
+
+program
+  .command('conversation:followups')
+  .description('Show all contacts that need follow-up')
+  .action(async () => {
+    try {
+      await databaseService.initialize();
+
+      console.log(chalk.blue('🚩 Follow-up Flags:'));
+
+      const followUpFlags = conversationService.getFollowUpFlags();
+
+      if (followUpFlags.length === 0) {
+        console.log(chalk.yellow('No follow-up flags found.'));
+        return;
+      }
+
+      console.log(chalk.cyan(`Total follow-up flags: ${followUpFlags.length}\n`));
+
+      followUpFlags.forEach((flag, index) => {
+        const priorityColor = flag.priority === 'high' ? chalk.red :
+          flag.priority === 'medium' ? chalk.yellow : chalk.green;
+
+        console.log(chalk.cyan(`${index + 1}. Contact ID: ${flag.contactId}`));
+        console.log(chalk.gray(`   Reason: ${flag.reason}`));
+        console.log(priorityColor(`   Priority: ${flag.priority.toUpperCase()}`));
+        console.log(chalk.gray(`   Action: ${flag.suggestedAction}`));
+        console.log(chalk.gray(`   Created: ${flag.createdDate.toLocaleString()}`));
+        if (flag.dueDate) {
+          console.log(chalk.gray(`   Due: ${flag.dueDate.toLocaleString()}`));
+        }
+        console.log();
+      });
+
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to get follow-up flags:'), (error as Error).message);
+    }
+  });
+
+program
+  .command('conversation:update-dates')
+  .description('Update next action dates based on contact engagement')
+  .action(async () => {
+    try {
+      await databaseService.initialize();
+
+      console.log(chalk.blue('⏰ Updating next action dates...'));
+
+      await conversationService.updateNextActionDates();
+
+      console.log(chalk.green('✅ Next action dates updated successfully'));
+
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to update next action dates:'), (error as Error).message);
     }
   });
 
