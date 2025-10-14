@@ -2,7 +2,8 @@ import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
-import { logger } from '../utils/logger.js';
+import logger from '../utils/winstonLogger.js';
+import debugMode from '../utils/debugMode.js';
 import { LimitTracker, LimitConfig } from './limitTracker.js';
 import { SmartTiming, TimeSlot } from '../utils/timing.js';
 
@@ -101,7 +102,11 @@ export class LinkedInService {
      * Initialize the browser and context
      */
     private async initializeBrowser(): Promise<void> {
+        const context = debugMode.createContext('linkedin-browser-init');
+
         try {
+            context.log('debug', 'Starting browser initialization');
+
             this.browser = await chromium.launch({
                 headless: this.config.headless,
                 args: [
@@ -131,7 +136,11 @@ export class LinkedInService {
                 });
             });
 
+            context.log('debug', 'Browser initialization completed successfully');
+            context.complete({ success: true });
+
         } catch (error) {
+            context.error(error instanceof Error ? error : new Error(String(error)), { success: false });
             throw new Error(`Failed to initialize browser: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
@@ -209,15 +218,18 @@ export class LinkedInService {
      * Login to LinkedIn with 2FA support
      */
     async login(credentials: LinkedInCredentials): Promise<boolean> {
-        if (!this.browser) {
-            await this.initializeBrowser();
-        }
-
-        if (!this.page) {
-            throw new Error('Page not initialized');
-        }
+        const context = debugMode.createContext('linkedin-login');
 
         try {
+            context.log('debug', 'Starting LinkedIn login process');
+
+            if (!this.browser) {
+                await this.initializeBrowser();
+            }
+
+            if (!this.page) {
+                throw new Error('Page not initialized');
+            }
             // Try to load existing session first
             const cookiesLoaded = await this.loadCookies();
             if (cookiesLoaded) {
@@ -280,12 +292,15 @@ export class LinkedInService {
                 this.isLoggedIn = true;
                 await this.saveCookies();
                 console.log('Successfully logged in to LinkedIn');
+                context.log('info', 'Login successful');
+                context.complete({ success: true });
                 return true;
             } else {
                 throw new Error('Login failed - please check your credentials');
             }
 
         } catch (error) {
+            context.error(error instanceof Error ? error : new Error(String(error)), { success: false });
             throw new Error(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }

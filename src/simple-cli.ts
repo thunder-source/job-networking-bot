@@ -135,6 +135,15 @@ program
         await dashboardCommand.parseAsync(['dashboard', ...process.argv.slice(3)]);
     });
 
+// System command
+program
+    .command('system')
+    .description('System management and monitoring commands')
+    .action(async () => {
+        const systemCommand = await import('./commands/system.js');
+        await systemCommand.default.parseAsync(['system', ...process.argv.slice(3)]);
+    });
+
 // Stats command
 program
     .command('stats')

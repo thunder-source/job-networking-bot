@@ -1,5 +1,6 @@
 import nodemailer, { Transporter, SendMailOptions } from 'nodemailer';
-import { logger } from '../utils/logger.js';
+import logger from '../utils/winstonLogger.js';
+import debugMode from '../utils/debugMode.js';
 import { v4 as uuidv4 } from 'uuid';
 import validator from 'validator';
 import EmailLookupService, { IEmailLookupResult } from './emailLookupService.js';
@@ -169,7 +170,11 @@ export class EmailService {
      * @returns Promise<IEmailResult> - Send result with tracking information
      */
     async sendEmail(emailData: IEmailData): Promise<IEmailResult> {
+        const context = debugMode.createContext('email-send');
+
         try {
+            context.log('debug', 'Starting email send process', { recipient: emailData.to, template: emailData.templateType });
+
             // Validate email data
             const validationErrors = this.validateEmailData(emailData);
             if (validationErrors.length > 0) {
@@ -210,7 +215,14 @@ export class EmailService {
             const info = await this.transporter.sendMail(mailOptions);
 
             // Log email sent
-            logger.info(`Email sent successfully: ${emailData.to} (${emailData.templateType})`);
+            logger.emailAction('EMAIL_SENT', emailData.to, true, {
+                templateType: emailData.templateType,
+                messageId: info.messageId,
+                trackingId: trackingData.trackingId
+            });
+
+            context.log('info', 'Email sent successfully');
+            context.complete({ success: true, messageId: info.messageId });
 
             return {
                 success: true,
@@ -222,10 +234,18 @@ export class EmailService {
             };
 
         } catch (error) {
-            logger.error('Error sending email:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+            logger.emailAction('EMAIL_SENT', emailData.to, false, {
+                templateType: emailData.templateType,
+                error: errorMessage
+            });
+
+            context.error(error instanceof Error ? error : new Error(errorMessage), { success: false });
+
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: errorMessage,
                 sentAt: new Date(),
                 recipient: emailData.to,
                 templateType: emailData.templateType
