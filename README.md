@@ -480,6 +480,187 @@ npm run template:example
 npx ts-node examples/template-example.ts
 ```
 
+## Email Service
+
+The bot includes a comprehensive email service with Nodemailer integration for sending professional emails:
+
+### Email Service Features
+
+- **SMTP Integration**: Support for Gmail, Outlook, and custom SMTP servers
+- **HTML Templates**: Professional email templates with responsive design
+- **Email Tracking**: Open rate tracking using tracking pixels
+- **Unsubscribe Handling**: Built-in unsubscribe link management
+- **Rate Limiting**: Respects ESP limits to avoid being flagged as spam
+- **Email Validation**: Validates email addresses before sending
+- **Bulk Sending**: Send multiple emails with rate limiting and delays
+- **Template System**: Pre-built templates for cold outreach, follow-up, and thank you emails
+
+### Email Service Usage
+
+```typescript
+import { EmailService, IEmailConfig, IEmailData } from './src/services/emailService.js';
+
+// Configure email service
+const emailConfig: IEmailConfig = {
+  provider: 'gmail',
+  credentials: {
+    email: 'your-email@gmail.com',
+    password: 'your-app-password'
+  },
+  trackingBaseUrl: 'https://your-domain.com/track',
+  unsubscribeBaseUrl: 'https://your-domain.com/unsubscribe',
+  rateLimit: {
+    maxEmailsPerHour: 50,
+    windowMs: 60 * 60 * 1000
+  }
+};
+
+// Initialize email service
+const emailService = new EmailService(emailConfig);
+
+// Send single email
+const emailData: IEmailData = {
+  to: 'recipient@example.com',
+  templateType: 'coldOutreach',
+  variables: {
+    name: 'Sarah Johnson',
+    company: 'TechCorp',
+    position: 'Senior Software Engineer',
+    technology: 'React and Node.js',
+    topic: 'scalable web applications',
+    industry: 'technology',
+    senderName: 'Alex Chen'
+  },
+  campaignId: 'campaign-001'
+};
+
+const result = await emailService.sendEmail(emailData);
+console.log(result.success ? 'Email sent!' : 'Failed to send email');
+```
+
+### Email Templates
+
+The service includes three professional email templates:
+
+#### Cold Outreach Email
+- Professional first contact message
+- Personalized with company, position, and technology details
+- Includes tracking pixel and unsubscribe link
+
+#### Follow-up Email
+- Polite follow-up for previous conversations
+- Maintains professional tone while being persistent
+- Includes relevant industry insights
+
+#### Thank You Email
+- Appreciation message after connecting
+- Acknowledges specific insights shared
+- Maintains relationship for future collaboration
+
+### SMTP Configuration
+
+#### Gmail Setup
+```typescript
+const gmailConfig: IEmailConfig = {
+  provider: 'gmail',
+  credentials: {
+    email: 'your-email@gmail.com',
+    password: 'your-app-password' // Use App Password, not regular password
+  }
+};
+```
+
+#### Outlook Setup
+```typescript
+const outlookConfig: IEmailConfig = {
+  provider: 'outlook',
+  credentials: {
+    email: 'your-email@outlook.com',
+    password: 'your-password'
+  }
+};
+```
+
+#### Custom SMTP Setup
+```typescript
+const customConfig: IEmailConfig = {
+  provider: 'custom',
+  credentials: {
+    email: 'your-email@yourdomain.com',
+    password: 'your-password',
+    host: 'smtp.yourdomain.com',
+    port: 587,
+    secure: false
+  }
+};
+```
+
+### Email Tracking
+
+The service includes comprehensive tracking features:
+
+```typescript
+// Track email opens
+await emailService.trackEmailOpen(trackingId);
+
+// Handle unsubscribes
+await emailService.handleUnsubscribe(trackingId);
+
+// Get email statistics
+const stats = await emailService.getEmailStats('campaign-001');
+console.log(`Open rate: ${(stats.openRate * 100).toFixed(2)}%`);
+```
+
+### Bulk Email Sending
+
+```typescript
+const bulkEmails: IEmailData[] = [
+  {
+    to: 'recipient1@example.com',
+    templateType: 'coldOutreach',
+    variables: { /* ... */ }
+  },
+  {
+    to: 'recipient2@example.com',
+    templateType: 'coldOutreach',
+    variables: { /* ... */ }
+  }
+];
+
+const results = await emailService.sendBulkEmails(bulkEmails, {
+  delayBetweenEmails: 2000, // 2 seconds between emails
+  maxConcurrent: 5
+});
+```
+
+### Rate Limiting
+
+The service includes built-in rate limiting to respect ESP limits:
+
+- **Gmail**: 50 emails per hour (configurable)
+- **Outlook**: 30 emails per hour (configurable)
+- **Custom SMTP**: 100 emails per hour (configurable)
+- **Automatic delays** between bulk emails
+- **Per-email rate limiting** to avoid spam detection
+
+### Email Validation
+
+```typescript
+// Validate email addresses
+const isValid = emailService.validateEmail('test@example.com');
+console.log(isValid); // true/false
+```
+
+### Running Email Examples
+
+```bash
+# Run the email service example
+npm run email:example
+
+# Or run directly with ts-node
+npx ts-node examples/email-example.ts
+```
+
 ### Environment Variables
 
 Create a `.env` file with your API credentials:
@@ -491,6 +672,17 @@ LINKEDIN_PASSWORD=your-password
 
 # OpenAI API key for AI message personalization
 OPENAI_API_KEY=your-openai-api-key
+
+# Email service credentials
+GMAIL_EMAIL=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-app-password
+OUTLOOK_EMAIL=your-email@outlook.com
+OUTLOOK_PASSWORD=your-password
+SMTP_EMAIL=your-email@yourdomain.com
+SMTP_PASSWORD=your-password
+SMTP_HOST=smtp.yourdomain.com
+SMTP_PORT=587
+SMTP_SECURE=false
 
 # Database connection (optional)
 MONGODB_URI=mongodb://localhost:27017/job-networking-bot
@@ -544,6 +736,16 @@ npm run template:example
 # Using compiled JavaScript
 npm run build
 node dist/examples/template-example.js
+```
+
+Run the email service example:
+```bash
+# Using ts-node (development)
+npm run email:example
+
+# Using compiled JavaScript
+npm run build
+node dist/examples/email-example.js
 ```
 
 ## License

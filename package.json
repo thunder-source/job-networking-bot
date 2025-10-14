@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "linkedin:example": "ts-node examples/linkedin-example.ts",
     "ai:example": "ts-node examples/ai-example.ts",
-    "template:example": "ts-node examples/template-example.ts"
+    "template:example": "ts-node examples/template-example.ts",
+    "email:example": "ts-node examples/email-example.ts"
   },
   "keywords": [
     "cli",
@@ -33,9 +34,12 @@
     "dotenv": "^16.3.1",
     "inquirer": "^9.2.12",
     "mongoose": "^8.19.1",
+    "nodemailer": "^6.9.8",
     "openai": "^4.104.0",
     "ora": "^7.0.1",
-    "playwright": "^1.56.0"
+    "playwright": "^1.56.0",
+    "uuid": "^9.0.1",
+    "validator": "^13.11.0"
   },
   "engines": {
     "node": ">=14.0.0"
