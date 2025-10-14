@@ -21,7 +21,8 @@
     "email:example": "ts-node examples/email-example.ts",
     "email-lookup:example": "ts-node examples/email-lookup-example.ts",
     "scheduler:example": "ts-node examples/scheduler-example.ts",
-    "rate-limiter:example": "ts-node examples/rate-limiter-example.ts"
+    "rate-limiter:example": "ts-node examples/rate-limiter-example.ts",
+    "safety:example": "ts-node examples/safety-example.ts"
   },
   "keywords": [
     "cli",

@@ -10,6 +10,7 @@ import { EmailService } from './src/services/emailService.js';
 import { LinkedInService } from './src/services/linkedinService.js';
 import conversationService from './src/services/conversationService.js';
 import { AdaptiveRateLimiter, AccountType, ActionType } from './src/services/rateLimiter.js';
+import { safetyService } from './src/services/safetyService.js';
 
 // Load environment variables
 dotenv.config();
@@ -387,6 +388,112 @@ program
 
     } catch (error) {
       console.error(chalk.red('❌ Failed to get rate limiter status:'), (error as Error).message);
+    }
+  });
+
+// Safety service commands
+program
+  .command('safety:status')
+  .description('Check safety service status and metrics')
+  .action(async () => {
+    try {
+      console.log(chalk.blue('🛡️ Safety Service Status:'));
+
+      const metrics = safetyService.getMetrics();
+      console.log(chalk.cyan('\n📊 Current Metrics:'));
+      console.log(chalk.gray(`   Total Actions: ${metrics.totalActions}`));
+      console.log(chalk.gray(`   Rejected Actions: ${metrics.rejectedActions}`));
+      console.log(chalk.gray(`   Rejection Rate: ${metrics.rejectionRate.toFixed(1)}%`));
+      console.log(chalk.gray(`   Current Hourly Count: ${metrics.currentHourlyCount}`));
+      console.log(chalk.gray(`   Current Daily Count: ${metrics.currentDailyCount}`));
+      console.log(chalk.gray(`   Last Action Time: ${metrics.lastActionTime.toLocaleString()}`));
+
+      console.log(chalk.cyan('\n🚨 Status Flags:'));
+      console.log(chalk.gray(`   Jail Detected: ${metrics.jailDetected ? chalk.red('Yes') : chalk.green('No')}`));
+      if (metrics.jailReason) {
+        console.log(chalk.red(`   Jail Reason: ${metrics.jailReason}`));
+      }
+      console.log(chalk.gray(`   CAPTCHA Detected: ${metrics.captchaDetected ? chalk.yellow('Yes') : chalk.green('No')}`));
+      if (metrics.lastCaptchaTime) {
+        console.log(chalk.yellow(`   Last CAPTCHA: ${metrics.lastCaptchaTime.toLocaleString()}`));
+      }
+      console.log(chalk.gray(`   Account Restricted: ${metrics.accountRestricted ? chalk.red('Yes') : chalk.green('No')}`));
+      if (metrics.restrictionReason) {
+        console.log(chalk.red(`   Restriction Reason: ${metrics.restrictionReason}`));
+      }
+
+      console.log(chalk.cyan('\n⏰ Time-based Status:'));
+      console.log(chalk.gray(`   Is Lunch Break: ${safetyService.isLunchBreakTime() ? chalk.yellow('Yes') : chalk.green('No')}`));
+      console.log(chalk.gray(`   Is Weekend: ${safetyService.isWeekendTime() ? chalk.blue('Yes') : chalk.green('No')}`));
+      console.log(chalk.gray(`   Activity Multiplier: ${safetyService.getActivityMultiplier()}`));
+
+      const actionCheck = safetyService.canPerformAction();
+      console.log(chalk.cyan('\n🎯 Action Permission:'));
+      console.log(chalk.gray(`   Can Perform Action: ${actionCheck.allowed ? chalk.green('Yes') : chalk.red('No')}`));
+      if (!actionCheck.allowed && actionCheck.reason) {
+        console.log(chalk.red(`   Reason: ${actionCheck.reason}`));
+        if (actionCheck.waitTime) {
+          console.log(chalk.yellow(`   Wait Time: ${Math.round(actionCheck.waitTime / 1000)}s`));
+        }
+      }
+
+      const alerts = safetyService.getRecentAlerts();
+      console.log(chalk.cyan('\n🚨 Recent Alerts:'));
+      if (alerts.length === 0) {
+        console.log(chalk.green('   No recent alerts'));
+      } else {
+        alerts.slice(-5).forEach((alert, index) => {
+          const alertColor = alert.type === 'critical' ? chalk.red :
+            alert.type === 'warning' ? chalk.yellow : chalk.blue;
+          console.log(alertColor(`   ${index + 1}. [${alert.type.toUpperCase()}] ${alert.message}`));
+          console.log(chalk.gray(`      Time: ${alert.timestamp.toLocaleString()}`));
+          console.log(chalk.gray(`      Requires Action: ${alert.requiresAction ? 'Yes' : 'No'}`));
+        });
+      }
+
+      console.log(chalk.green('\n✅ Safety status check completed'));
+
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to get safety status:'), (error as Error).message);
+    }
+  });
+
+program
+  .command('safety:demo')
+  .description('Demonstrate safety service functionality')
+  .action(async () => {
+    try {
+      console.log(chalk.blue('🔒 Starting Safety Service Demo...'));
+
+      // Import and run the demo
+      const safetyExample = await import('./examples/safety-example.js');
+      await safetyExample.demonstrateSafetyService();
+
+    } catch (error) {
+      console.error(chalk.red('❌ Safety demo failed:'), (error as Error).message);
+    }
+  });
+
+program
+  .command('safety:reset')
+  .description('Reset safety service metrics (use with caution)')
+  .option('--confirm', 'confirm the reset operation')
+  .action(async (options: { confirm?: boolean }) => {
+    try {
+      if (!options.confirm) {
+        console.log(chalk.yellow('⚠️ This will reset all safety metrics and alerts.'));
+        console.log(chalk.gray('Use --confirm flag to proceed with the reset.'));
+        return;
+      }
+
+      console.log(chalk.blue('🔄 Resetting safety service metrics...'));
+
+      safetyService.resetMetrics();
+
+      console.log(chalk.green('✅ Safety metrics reset successfully'));
+
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to reset safety metrics:'), (error as Error).message);
     }
   });
 

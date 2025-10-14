@@ -1,0 +1,17 @@
+{
+  "metrics": {
+    "totalActions": 0,
+    "rejectedActions": 0,
+    "rejectionRate": 0,
+    "currentHourlyCount": 0,
+    "currentDailyCount": 0,
+    "lastActionTime": "2025-10-14T13:45:41.584Z",
+    "jailDetected": false,
+    "captchaDetected": false,
+    "accountRestricted": false
+  },
+  "alerts": [],
+  "hourlyActionCounts": [],
+  "dailyActionCounts": [],
+  "lastSaved": "2025-10-14T14:50:41.692Z"
+}
