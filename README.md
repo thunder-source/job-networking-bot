@@ -362,6 +362,124 @@ npm run ai:example
 npx ts-node examples/ai-example.ts
 ```
 
+## Template Management Service
+
+The bot includes a comprehensive template management service for creating, testing, and managing message templates:
+
+### Template Service Features
+
+- **CRUD Operations**: Create, read, update, and delete templates
+- **Template Testing**: Test templates with sample data before use
+- **Variable Validation**: Automatic validation of template variables and character limits
+- **Database Integration**: Full MongoDB integration for template persistence
+- **Scenario Categorization**: Organize templates by type, category, and tags
+- **Template Versioning**: Track template changes and maintain version history
+- **Search & Filtering**: Find templates by keywords, type, or category
+
+### Template Service Usage
+
+```typescript
+import { TemplateService } from './src/services/templateService.js';
+
+// Initialize template service
+const templateService = new TemplateService();
+
+// Create a new template
+const template = await templateService.createTemplate({
+  name: 'Software Engineer Outreach',
+  type: TemplateType.CONNECTION,
+  content: 'Hi {{name}}! I noticed your work with {{technology}} at {{company}}.',
+  variables: [
+    { name: 'name', type: VariableType.STRING, required: true },
+    { name: 'technology', type: VariableType.STRING, required: true },
+    { name: 'company', type: VariableType.STRING, required: true }
+  ],
+  category: TemplateCategory.NETWORKING,
+  tags: ['linkedin', 'software', 'engineering']
+});
+
+// Test template with sample data
+const testResult = await templateService.testTemplate(template._id, {
+  name: 'Sarah Johnson',
+  technology: 'React and Node.js',
+  company: 'TechCorp'
+});
+
+console.log(testResult.renderedContent);
+// Output: "Hi Sarah Johnson! I noticed your work with React and Node.js at TechCorp."
+```
+
+### Template Operations
+
+#### Create Template
+```typescript
+const template = await templateService.createTemplate({
+  name: 'Template Name',
+  type: TemplateType.CONNECTION,
+  content: 'Message with {{variable}} placeholders',
+  variables: [
+    { name: 'variable', type: VariableType.STRING, required: true }
+  ],
+  category: TemplateCategory.NETWORKING
+});
+```
+
+#### Test Template
+```typescript
+const result = await templateService.testTemplate(templateId, {
+  variable: 'sample value'
+});
+
+console.log(result.success); // true/false
+console.log(result.renderedContent); // rendered message
+console.log(result.validationErrors); // array of errors
+console.log(result.characterCount); // character count
+```
+
+#### Search Templates
+```typescript
+const templates = await templateService.searchTemplates('software');
+const byType = await templateService.getTemplatesByType(TemplateType.CONNECTION);
+const byCategory = await templateService.getTemplatesByCategory(TemplateCategory.NETWORKING);
+```
+
+#### Get Templates by Scenario
+```typescript
+const scenario: IScenario = {
+  type: TemplateType.CONNECTION,
+  category: TemplateCategory.NETWORKING,
+  tags: ['linkedin'],
+  platform: 'linkedin'
+};
+
+const templates = await templateService.getTemplatesByScenario(scenario);
+```
+
+### Template Validation
+
+The service automatically validates:
+- **Character Limits**: Ensures messages stay within LinkedIn's limits (200-300 chars)
+- **Required Variables**: Checks that all required variables are provided
+- **Variable Types**: Validates variable types (string, number, date, boolean, array)
+- **Template Syntax**: Ensures proper variable bracket syntax `{{variable}}`
+
+### Default Templates
+
+The service includes three default templates:
+- **LinkedIn Initial Connection**: Professional first contact message
+- **LinkedIn Follow-up Message**: Polite follow-up for previous conversations  
+- **LinkedIn Thank You Message**: Appreciation message after connecting
+
+### Running Template Examples
+
+```bash
+# Run the template service example
+npm run template:example
+
+# Or run directly with ts-node
+npx ts-node examples/template-example.ts
+```
+
 ### Environment Variables
 
 Create a `.env` file with your API credentials:
@@ -416,6 +534,16 @@ npm run ai:example
 # Using compiled JavaScript
 npm run build
 node dist/examples/ai-example.js
+```
+
+Run the template service example:
+```bash
+# Using ts-node (development)
+npm run template:example
+
+# Using compiled JavaScript
+npm run build
+node dist/examples/template-example.js
 ```
 
 ## License
