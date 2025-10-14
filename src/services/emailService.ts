@@ -474,7 +474,7 @@ export class EmailService {
 
         switch (provider) {
             case 'gmail':
-                return nodemailer.createTransporter({
+                return nodemailer.createTransport({
                     service: 'gmail',
                     auth: {
                         user: credentials.email,
@@ -483,7 +483,7 @@ export class EmailService {
                 });
 
             case 'outlook':
-                return nodemailer.createTransporter({
+                return nodemailer.createTransport({
                     service: 'hotmail',
                     auth: {
                         user: credentials.email,
@@ -492,7 +492,7 @@ export class EmailService {
                 });
 
             case 'custom':
-                return nodemailer.createTransporter({
+                return nodemailer.createTransport({
                     host: credentials.host,
                     port: credentials.port || 587,
                     secure: credentials.secure || false,

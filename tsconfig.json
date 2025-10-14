@@ -38,7 +38,16 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/commands/start.ts",
+    "src/commands/search.ts",
+    "src/commands/connect.ts",
+    "src/commands/followup.ts",
+    "src/commands/stats.ts",
+    "src/commands/templates.ts",
+    "src/commands/contacts.ts",
+    "src/commands/test.ts",
+    "src/commands/simple-start.ts"
   ],
   "ts-node": {
     "esm": true,
