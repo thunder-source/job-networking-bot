@@ -5,6 +5,9 @@ import chalk from 'chalk';
 import dotenv from 'dotenv';
 import databaseService from './src/services/databaseService.js';
 import { createLinkedInCommand } from './src/commands/linkedin.js';
+import { SchedulerService, ISchedulerConfig } from './src/services/schedulerService.js';
+import { EmailService } from './src/services/emailService.js';
+import { LinkedInService } from './src/services/linkedinService.js';
 
 // Load environment variables
 dotenv.config();
@@ -126,6 +129,105 @@ program
       });
     } catch (error) {
       console.error(chalk.red('❌ Failed to get statistics:'), (error as Error).message);
+    }
+  });
+
+// Scheduler commands
+program
+  .command('scheduler:start')
+  .description('Start the follow-up scheduler service')
+  .option('--timezone <timezone>', 'timezone for scheduling', 'America/New_York')
+  .action(async (options: { timezone: string }) => {
+    try {
+      console.log(chalk.blue('⏰ Starting scheduler service...'));
+
+      // Initialize database
+      await databaseService.initialize();
+
+      // Create scheduler configuration
+      const schedulerConfig: ISchedulerConfig = {
+        enabled: true,
+        timezone: options.timezone,
+        workingHours: {
+          start: '09:00',
+          end: '17:00',
+          days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        },
+        followUpSettings: {
+          day3Reminder: true,
+          day7FollowUp: true,
+          day14FollowUp: true,
+          day21FinalFollowUp: true,
+          maxFollowUps: 3
+        },
+        rateLimiting: {
+          maxTasksPerHour: 50,
+          delayBetweenTasks: 60000
+        },
+        retrySettings: {
+          maxRetries: 3,
+          retryDelay: 300000,
+          exponentialBackoff: true
+        }
+      };
+
+      // Initialize services
+      const emailService = new EmailService({
+        provider: 'gmail',
+        credentials: {
+          email: process.env.EMAIL_USER || '',
+          password: process.env.EMAIL_PASSWORD || ''
+        }
+      });
+
+      const linkedinService = new LinkedInService({
+        headless: true,
+        enableLogging: true
+      });
+
+      // Create and start scheduler
+      const scheduler = new SchedulerService(
+        schedulerConfig,
+        emailService,
+        linkedinService,
+        databaseService
+      );
+
+      await scheduler.start();
+
+      console.log(chalk.green('✅ Scheduler started successfully'));
+      console.log(chalk.gray('Press Ctrl+C to stop the scheduler'));
+
+      // Handle graceful shutdown
+      process.on('SIGINT', async () => {
+        console.log(chalk.yellow('🛑 Stopping scheduler...'));
+        await scheduler.stop();
+        await databaseService.cleanup();
+        process.exit(0);
+      });
+
+      // Keep the process alive
+      setInterval(() => {
+        const status = scheduler.getStatus();
+        console.log(chalk.gray(`Scheduler status: ${status.pendingTasks} pending, ${status.completedTasks} completed`));
+      }, 300000); // Every 5 minutes
+
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to start scheduler:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('scheduler:status')
+  .description('Check scheduler service status')
+  .action(async () => {
+    try {
+      console.log(chalk.blue('📊 Scheduler Status:'));
+      console.log(chalk.gray('Note: This command requires the scheduler to be running'));
+      // TODO: Implement status checking via API or file
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to get scheduler status:'), (error as Error).message);
     }
   });
 

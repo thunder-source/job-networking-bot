@@ -19,7 +19,8 @@
     "ai:example": "ts-node examples/ai-example.ts",
     "template:example": "ts-node examples/template-example.ts",
     "email:example": "ts-node examples/email-example.ts",
-    "email-lookup:example": "ts-node examples/email-lookup-example.ts"
+    "email-lookup:example": "ts-node examples/email-lookup-example.ts",
+    "scheduler:example": "ts-node examples/scheduler-example.ts"
   },
   "keywords": [
     "cli",
@@ -30,11 +31,13 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@types/node-cron": "^3.0.11",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "dotenv": "^16.3.1",
     "inquirer": "^9.2.12",
     "mongoose": "^8.19.1",
+    "node-cron": "^4.2.1",
     "nodemailer": "^6.9.8",
     "openai": "^4.104.0",
     "ora": "^7.0.1",

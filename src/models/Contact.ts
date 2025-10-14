@@ -160,11 +160,11 @@ const contactSchema = new Schema<IContactDocument>({
         },
         source: {
             type: String,
-            enum: ['hunter', 'rocketreach', 'fallback', 'cache', 'manual']
+            enum: ['hunter', 'rocketreach', 'fallback', 'cache', 'manual', 'unknown']
         },
         method: {
             type: String,
-            enum: ['api', 'pattern', 'database', 'manual']
+            enum: ['api', 'pattern', 'database', 'manual', 'none']
         },
         verified: {
             type: Boolean,

@@ -45,8 +45,8 @@ export interface ILocation {
 export interface IEmailLookupData {
     foundEmail?: string;
     confidence?: number;
-    source?: 'hunter' | 'rocketreach' | 'fallback' | 'cache' | 'manual';
-    method?: 'api' | 'pattern' | 'database' | 'manual';
+    source?: 'hunter' | 'rocketreach' | 'fallback' | 'cache' | 'manual' | 'unknown';
+    method?: 'api' | 'pattern' | 'database' | 'manual' | 'none';
     verified?: boolean;
     lastVerified?: Date;
     verificationMethod?: string;
