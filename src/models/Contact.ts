@@ -21,6 +21,7 @@ export interface IContactDocument extends Omit<IContact, '_id'>, Document {
     updateStatus(newStatus: ContactStatus): Promise<IContactDocument>;
     addTag(tag: string): Promise<IContactDocument>;
     removeTag(tag: string): Promise<IContactDocument>;
+    updateEmailLookup(lookupData: any): Promise<IContactDocument>;
 }
 
 // Interface for the model
@@ -30,6 +31,8 @@ export interface IContactModel extends Model<IContactDocument> {
     findByCompany(company: string): Promise<IContactDocument[]>;
     findByTag(tag: string): Promise<IContactDocument[]>;
     getStats(): Promise<Array<{ _id: string; count: number }>>;
+    findByEmailLookupSource(source: string): Promise<IContactDocument[]>;
+    findUnverifiedEmails(): Promise<IContactDocument[]>;
 }
 
 const conversationHistorySchema = new Schema<IConversationHistory>({
@@ -147,6 +150,30 @@ const contactSchema = new Schema<IContactDocument>({
         default: 0
     },
     lastResponseDate: Date,
+    // Email lookup metadata
+    emailLookup: {
+        foundEmail: String,
+        confidence: {
+            type: Number,
+            min: 0,
+            max: 100
+        },
+        source: {
+            type: String,
+            enum: ['hunter', 'rocketreach', 'fallback', 'cache', 'manual']
+        },
+        method: {
+            type: String,
+            enum: ['api', 'pattern', 'database', 'manual']
+        },
+        verified: {
+            type: Boolean,
+            default: false
+        },
+        lastVerified: Date,
+        verificationMethod: String,
+        lookupMetadata: Schema.Types.Mixed
+    },
     // Metadata
     createdAt: {
         type: Date,
@@ -222,6 +249,16 @@ contactSchema.methods.removeTag = function (this: IContactDocument, tag: string)
     return this.save();
 };
 
+contactSchema.methods.updateEmailLookup = function (this: IContactDocument, lookupData: any): Promise<IContactDocument> {
+    this.emailLookup = {
+        ...this.emailLookup,
+        ...lookupData,
+        lastVerified: new Date()
+    };
+    this.updatedAt = new Date();
+    return this.save();
+};
+
 // Static methods
 contactSchema.statics.findByStatus = function (this: IContactModel, status: ContactStatus): Promise<IContactDocument[]> {
     return this.find({ status });
@@ -248,6 +285,19 @@ contactSchema.statics.getStats = function (this: IContactModel): Promise<Array<{
             }
         }
     ]);
+};
+
+contactSchema.statics.findByEmailLookupSource = function (this: IContactModel, source: string): Promise<IContactDocument[]> {
+    return this.find({ 'emailLookup.source': source });
+};
+
+contactSchema.statics.findUnverifiedEmails = function (this: IContactModel): Promise<IContactDocument[]> {
+    return this.find({
+        $or: [
+            { 'emailLookup.verified': { $ne: true } },
+            { 'emailLookup.verified': { $exists: false } }
+        ]
+    });
 };
 
 // Transform JSON output

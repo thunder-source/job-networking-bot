@@ -2,6 +2,7 @@ import nodemailer, { Transporter, SendMailOptions } from 'nodemailer';
 import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import validator from 'validator';
+import EmailLookupService, { IEmailLookupResult } from './emailLookupService.js';
 
 // Simple rate limiter for email sending
 class EmailRateLimiter {
@@ -43,6 +44,7 @@ export class EmailService {
     private rateLimiter: EmailRateLimiter;
     private trackingBaseUrl: string;
     private unsubscribeBaseUrl: string;
+    private emailLookupService: EmailLookupService | null = null;
 
     // Email templates
     public readonly emailTemplates = {
@@ -154,6 +156,11 @@ export class EmailService {
 
         // Create transporter based on provider
         this.transporter = this.createTransporter(config);
+
+        // Initialize email lookup service if API keys are provided
+        if (config.emailLookup) {
+            this.emailLookupService = new EmailLookupService(config.emailLookup);
+        }
     }
 
     /**
@@ -371,6 +378,95 @@ export class EmailService {
     }
 
     /**
+     * Find email address for a contact
+     * @param firstName - Person's first name
+     * @param lastName - Person's last name
+     * @param company - Company name or domain
+     * @param options - Lookup options
+     * @returns Promise<IEmailLookupResult> - Lookup result
+     */
+    async findEmail(
+        firstName: string,
+        lastName: string,
+        company: string,
+        options: any = {}
+    ): Promise<IEmailLookupResult> {
+        if (!this.emailLookupService) {
+            throw new Error('Email lookup service not configured. Please provide API keys.');
+        }
+
+        return await this.emailLookupService.findEmail(firstName, lastName, company, options);
+    }
+
+    /**
+     * Verify email address before sending
+     * @param email - Email address to verify
+     * @returns Promise<boolean> - True if email is valid and deliverable
+     */
+    async verifyEmail(email: string): Promise<boolean> {
+        if (!this.emailLookupService) {
+            // Fallback to basic validation
+            return this.validateEmail(email);
+        }
+
+        return await this.emailLookupService.verifyEmail(email);
+    }
+
+    /**
+     * Send email with automatic email lookup if needed
+     * @param emailData - Email data with optional lookup information
+     * @returns Promise<IEmailResult> - Send result
+     */
+    async sendEmailWithLookup(emailData: IEmailDataWithLookup): Promise<IEmailResult> {
+        try {
+            let finalEmail = emailData.to;
+
+            // If email lookup is requested and we have the service
+            if (emailData.enableLookup && this.emailLookupService && emailData.lookupData) {
+                const lookupResult = await this.findEmail(
+                    emailData.lookupData.firstName,
+                    emailData.lookupData.lastName,
+                    emailData.lookupData.company,
+                    emailData.lookupOptions
+                );
+
+                if (lookupResult.email && lookupResult.confidence >= (emailData.minConfidence || 50)) {
+                    finalEmail = lookupResult.email;
+                    logger.info(`Using looked up email: ${finalEmail} (confidence: ${lookupResult.confidence}%)`);
+                } else {
+                    logger.warn(`Email lookup failed or low confidence. Using original email: ${finalEmail}`);
+                }
+            }
+
+            // Verify email before sending
+            if (emailData.verifyBeforeSend !== false) {
+                const isValid = await this.verifyEmail(finalEmail);
+                if (!isValid) {
+                    throw new Error(`Email verification failed for: ${finalEmail}`);
+                }
+            }
+
+            // Send email with the final email address
+            const finalEmailData: IEmailData = {
+                ...emailData,
+                to: finalEmail
+            };
+
+            return await this.sendEmail(finalEmailData);
+
+        } catch (error) {
+            logger.error('Error in sendEmailWithLookup:', error);
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                sentAt: new Date(),
+                recipient: emailData.to,
+                templateType: emailData.templateType
+            };
+        }
+    }
+
+    /**
      * Create transporter based on configuration
      */
     private createTransporter(config: IEmailConfig): Transporter {
@@ -492,6 +588,10 @@ export interface IEmailConfig {
         maxEmailsPerHour: number;
         windowMs: number;
     };
+    emailLookup?: {
+        hunterApiKey?: string;
+        rocketReachApiKey?: string;
+    };
 }
 
 export interface IEmailCredentials {
@@ -555,6 +655,18 @@ export interface IEmailStats {
     openRate: number;
     unsubscribeRate: number;
     campaignId?: string;
+}
+
+export interface IEmailDataWithLookup extends IEmailData {
+    enableLookup?: boolean;
+    lookupData?: {
+        firstName: string;
+        lastName: string;
+        company: string;
+    };
+    lookupOptions?: any;
+    minConfidence?: number;
+    verifyBeforeSend?: boolean;
 }
 
 export default EmailService;

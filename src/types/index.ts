@@ -21,6 +21,7 @@ export interface IContact {
     campaigns?: string[];
     responseRate: number;
     lastResponseDate?: Date;
+    emailLookup?: IEmailLookupData;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -39,6 +40,17 @@ export interface ILocation {
     city?: string;
     state?: string;
     country?: string;
+}
+
+export interface IEmailLookupData {
+    foundEmail?: string;
+    confidence?: number;
+    source?: 'hunter' | 'rocketreach' | 'fallback' | 'cache' | 'manual';
+    method?: 'api' | 'pattern' | 'database' | 'manual';
+    verified?: boolean;
+    lastVerified?: Date;
+    verificationMethod?: string;
+    lookupMetadata?: Record<string, any>;
 }
 
 export interface ITemplate {

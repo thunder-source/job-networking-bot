@@ -18,7 +18,8 @@
     "linkedin:example": "ts-node examples/linkedin-example.ts",
     "ai:example": "ts-node examples/ai-example.ts",
     "template:example": "ts-node examples/template-example.ts",
-    "email:example": "ts-node examples/email-example.ts"
+    "email:example": "ts-node examples/email-example.ts",
+    "email-lookup:example": "ts-node examples/email-lookup-example.ts"
   },
   "keywords": [
     "cli",

@@ -12,6 +12,8 @@ A Node.js CLI tool for job networking automation that helps you connect with pro
 - 🗄️ **MongoDB Integration** with Mongoose for data persistence
 - 📊 **Advanced Analytics** with campaign tracking and statistics
 - 📧 **Template System** with variable substitution and validation
+- 📬 **Email Lookup Service** with Hunter.io and RocketReach integration
+- ✅ **Email Verification** with DNS and SMTP validation
 - 🔷 **TypeScript Support** with full type safety and IntelliSense
 
 ## Installation
@@ -661,6 +663,127 @@ npm run email:example
 npx ts-node examples/email-example.ts
 ```
 
+## Email Lookup Service
+
+The bot includes a comprehensive email lookup service that integrates with Hunter.io and RocketReach APIs to find and verify email addresses:
+
+### Email Lookup Features
+
+- **Multi-API Integration**: Supports Hunter.io and RocketReach APIs
+- **Email Verification**: Validates email addresses using DNS and SMTP checks
+- **Database Caching**: Saves found emails to reduce API calls and costs
+- **Fallback Patterns**: Generates common email formats when APIs fail
+- **Confidence Scoring**: Provides confidence levels for found emails
+- **Rate Limiting**: Built-in rate limiting for API calls
+
+### Email Lookup Usage
+
+```typescript
+import EmailLookupService from './src/services/emailLookupService.js';
+
+// Initialize email lookup service
+const emailLookupService = new EmailLookupService({
+    hunterApiKey: process.env.HUNTER_API_KEY,
+    rocketReachApiKey: process.env.ROCKETREACH_API_KEY
+});
+
+// Find email address
+const result = await emailLookupService.findEmail(
+    'John',
+    'Doe',
+    'google.com',
+    {
+        preferHunter: true,
+        verifyEmail: true,
+        enableFallback: true
+    }
+);
+
+console.log(result);
+// {
+//     email: 'john.doe@google.com',
+//     confidence: 85,
+//     source: 'hunter',
+//     method: 'api',
+//     verified: true,
+//     metadata: { ... }
+// }
+```
+
+### Integrated Email Service with Lookup
+
+```typescript
+import { EmailService } from './src/services/emailService.js';
+
+// Configure email service with lookup
+const emailConfig: IEmailConfig = {
+  provider: 'gmail',
+  credentials: {
+    email: 'your-email@gmail.com',
+    password: 'your-app-password'
+  },
+  emailLookup: {
+    hunterApiKey: process.env.HUNTER_API_KEY,
+    rocketReachApiKey: process.env.ROCKETREACH_API_KEY
+  }
+};
+
+const emailService = new EmailService(emailConfig);
+
+// Send email with automatic lookup
+const result = await emailService.sendEmailWithLookup({
+  to: 'placeholder@example.com', // Will be replaced by lookup
+  templateType: 'coldOutreach',
+  variables: { /* ... */ },
+  enableLookup: true,
+  lookupData: {
+    firstName: 'John',
+    lastName: 'Doe',
+    company: 'google.com'
+  },
+  minConfidence: 70,
+  verifyBeforeSend: true
+});
+```
+
+### Fallback Email Patterns
+
+When APIs fail, the service generates common email patterns:
+- `firstName.lastName@domain.com`
+- `firstNameLastName@domain.com`
+- `f.lastName@domain.com`
+- `firstName.l@domain.com`
+- And more variations...
+
+### Database Integration
+
+Email lookup results are automatically cached in the database:
+
+```typescript
+// Find contacts by email lookup source
+const hunterContacts = await Contact.findByEmailLookupSource('hunter');
+
+// Find contacts with unverified emails
+const unverifiedContacts = await Contact.findUnverifiedEmails();
+
+// Update email lookup data
+await contact.updateEmailLookup({
+    foundEmail: 'new.email@company.com',
+    confidence: 90,
+    verified: true
+});
+```
+
+### Running Email Lookup Examples
+
+```bash
+# Run the email lookup service example
+npm run email-lookup:example
+
+# Or run directly with ts-node
+npx ts-node examples/email-lookup-example.ts
+```
+
 ### Environment Variables
 
 Create a `.env` file with your API credentials:
@@ -683,6 +806,10 @@ SMTP_PASSWORD=your-password
 SMTP_HOST=smtp.yourdomain.com
 SMTP_PORT=587
 SMTP_SECURE=false
+
+# Email lookup API keys
+HUNTER_API_KEY=your-hunter-io-api-key
+ROCKETREACH_API_KEY=your-rocketreach-api-key
 
 # Database connection (optional)
 MONGODB_URI=mongodb://localhost:27017/job-networking-bot
@@ -746,6 +873,16 @@ npm run email:example
 # Using compiled JavaScript
 npm run build
 node dist/examples/email-example.js
+```
+
+Run the email lookup service example:
+```bash
+# Using ts-node (development)
+npm run email-lookup:example
+
+# Using compiled JavaScript
+npm run build
+node dist/examples/email-lookup-example.js
 ```
 
 ## License
