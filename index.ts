@@ -9,6 +9,7 @@ import { SchedulerService, ISchedulerConfig } from './src/services/schedulerServ
 import { EmailService } from './src/services/emailService.js';
 import { LinkedInService } from './src/services/linkedinService.js';
 import conversationService from './src/services/conversationService.js';
+import { AdaptiveRateLimiter, AccountType, ActionType } from './src/services/rateLimiter.js';
 
 // Load environment variables
 dotenv.config();
@@ -331,6 +332,61 @@ program
 
     } catch (error) {
       console.error(chalk.red('❌ Failed to update next action dates:'), (error as Error).message);
+    }
+  });
+
+// Rate limiter commands
+program
+  .command('rate-limiter:demo')
+  .description('Demonstrate the adaptive rate limiter functionality')
+  .action(async () => {
+    try {
+      console.log(chalk.blue('🚀 Starting Rate Limiter Demo...'));
+
+      // Import and run the demo
+      const { demonstrateRateLimiter } = await import('./examples/rate-limiter-example.js');
+      await demonstrateRateLimiter();
+
+    } catch (error) {
+      console.error(chalk.red('❌ Rate limiter demo failed:'), (error as Error).message);
+    }
+  });
+
+program
+  .command('rate-limiter:status <accountId>')
+  .description('Check rate limiter status for a specific account')
+  .action(async (accountId: string) => {
+    try {
+      console.log(chalk.blue(`📊 Rate Limiter Status for ${accountId}:`));
+
+      const rateLimiter = new AdaptiveRateLimiter();
+      await rateLimiter.initialize();
+
+      const profile = rateLimiter.getAccountProfile(accountId);
+      if (!profile) {
+        console.log(chalk.red('Account not found. Register it first.'));
+        return;
+      }
+
+      console.log(chalk.cyan('Account Profile:'));
+      console.log(chalk.gray(`  Type: ${profile.accountType}`));
+      console.log(chalk.gray(`  Age: ${profile.accountAge} days`));
+      console.log(chalk.gray(`  Premium: ${profile.isPremium}`));
+      console.log(chalk.gray(`  Success Rate: ${(profile.successRate * 100).toFixed(1)}%`));
+      console.log(chalk.gray(`  Rejection Rate: ${(profile.rejectionRate * 100).toFixed(1)}%`));
+      console.log(chalk.gray(`  Suspicious Score: ${(profile.suspiciousActivityScore * 100).toFixed(1)}%`));
+      console.log(chalk.gray(`  Weekly Usage: ${profile.weeklyUsage}`));
+      console.log(chalk.gray(`  Monthly Usage: ${profile.monthlyUsage}`));
+      console.log(chalk.gray(`  Cooldown Until: ${profile.cooldownUntil || 'None'}`));
+
+      const limits = rateLimiter.getCurrentLimits(profile);
+      console.log(chalk.cyan('\nCurrent Limits:'));
+      console.log(chalk.gray(`  Connections: ${limits.connections}`));
+      console.log(chalk.gray(`  Messages: ${limits.messages}`));
+      console.log(chalk.gray(`  Profile Views: ${limits.profileViews}`));
+
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to get rate limiter status:'), (error as Error).message);
     }
   });
 

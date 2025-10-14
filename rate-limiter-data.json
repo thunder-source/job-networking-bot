@@ -1,0 +1,126 @@
+{
+  "profiles": {
+    "new-account-1": {
+      "accountId": "new-account-1",
+      "accountType": "new",
+      "accountAge": 0,
+      "isPremium": false,
+      "createdAt": "2025-10-14T13:36:25.671Z",
+      "lastActivity": "2025-10-14T13:36:25.743Z",
+      "totalConnections": 5,
+      "totalMessages": 0,
+      "totalProfileViews": 0,
+      "successRate": 1,
+      "rejectionRate": 0,
+      "suspiciousActivityScore": 0.1,
+      "weeklyUsage": 5,
+      "monthlyUsage": 5,
+      "cooldownUntil": "2025-10-14T14:06:25.756Z"
+    },
+    "established-account-1": {
+      "accountId": "established-account-1",
+      "accountType": "established",
+      "accountAge": 0,
+      "isPremium": false,
+      "createdAt": "2025-10-14T13:36:25.672Z",
+      "lastActivity": "2025-10-14T13:36:25.812Z",
+      "totalConnections": 5,
+      "totalMessages": 0,
+      "totalProfileViews": 0,
+      "successRate": 1,
+      "rejectionRate": 0,
+      "suspiciousActivityScore": 0,
+      "weeklyUsage": 5,
+      "monthlyUsage": 5
+    },
+    "premium-account-1": {
+      "accountId": "premium-account-1",
+      "accountType": "premium",
+      "accountAge": 0,
+      "isPremium": true,
+      "createdAt": "2025-10-14T13:36:25.673Z",
+      "lastActivity": "2025-10-14T13:36:25.673Z",
+      "totalConnections": 0,
+      "totalMessages": 0,
+      "totalProfileViews": 0,
+      "successRate": 1,
+      "rejectionRate": 0,
+      "suspiciousActivityScore": 0,
+      "weeklyUsage": 0,
+      "monthlyUsage": 0
+    }
+  },
+  "actionHistory": [
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.687Z",
+      "success": true,
+      "delayUsed": 95666,
+      "accountId": "new-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.699Z",
+      "success": true,
+      "delayUsed": 98783,
+      "accountId": "new-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.713Z",
+      "success": true,
+      "delayUsed": 93342,
+      "accountId": "new-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.728Z",
+      "success": true,
+      "delayUsed": 87009,
+      "accountId": "new-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.743Z",
+      "success": true,
+      "delayUsed": 85209,
+      "accountId": "new-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.756Z",
+      "success": true,
+      "delayUsed": 47351,
+      "accountId": "established-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.770Z",
+      "success": true,
+      "delayUsed": 54642,
+      "accountId": "established-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.785Z",
+      "success": true,
+      "delayUsed": 41595,
+      "accountId": "established-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.798Z",
+      "success": true,
+      "delayUsed": 49129,
+      "accountId": "established-account-1"
+    },
+    {
+      "actionType": "connection_request",
+      "timestamp": "2025-10-14T13:36:25.812Z",
+      "success": true,
+      "delayUsed": 69302,
+      "accountId": "established-account-1"
+    }
+  ],
+  "lastSaved": "2025-10-14T13:36:25.812Z"
+}

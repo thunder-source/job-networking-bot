@@ -20,7 +20,8 @@
     "template:example": "ts-node examples/template-example.ts",
     "email:example": "ts-node examples/email-example.ts",
     "email-lookup:example": "ts-node examples/email-lookup-example.ts",
-    "scheduler:example": "ts-node examples/scheduler-example.ts"
+    "scheduler:example": "ts-node examples/scheduler-example.ts",
+    "rate-limiter:example": "ts-node examples/rate-limiter-example.ts"
   },
   "keywords": [
     "cli",
