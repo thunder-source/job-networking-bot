@@ -148,3 +148,4 @@ export function createSimpleStartCommand(): Command {
 
     return startCommand;
 }
+

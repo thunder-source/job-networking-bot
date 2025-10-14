@@ -399,3 +399,4 @@ FROM_EMAIL=
 
     return configCommand;
 }
+
