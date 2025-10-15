@@ -161,12 +161,24 @@ export class LinkedInService {
 
         try {
             const cookies = await this.context.cookies();
-            await fs.promises.writeFile(
-                this.config.cookiesPath!,
-                JSON.stringify(cookies, null, 2)
-            );
+            const cookiesData = JSON.stringify(cookies, null, 2);
+
+            // Ensure directory exists
+            const cookiesDir = path.dirname(this.config.cookiesPath!);
+            await fs.promises.mkdir(cookiesDir, { recursive: true });
+
+            await fs.promises.writeFile(this.config.cookiesPath!, cookiesData);
+
+            if (this.config.enableLogging) {
+                logger.info('Cookies saved successfully', {
+                    count: cookies.length,
+                    path: this.config.cookiesPath
+                });
+            }
         } catch (error) {
-            console.warn('Failed to save cookies:', error);
+            const errorMsg = `Failed to save cookies: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            console.warn(errorMsg);
+            logger.error('Cookie save failed', { error: errorMsg });
         }
     }
 
@@ -175,16 +187,50 @@ export class LinkedInService {
      */
     private async loadCookies(): Promise<boolean> {
         if (!this.context || !fs.existsSync(this.config.cookiesPath!)) {
+            if (this.config.enableLogging) {
+                logger.info('No cookies file found, will need to login', {
+                    path: this.config.cookiesPath
+                });
+            }
             return false;
         }
 
         try {
             const cookiesData = await fs.promises.readFile(this.config.cookiesPath!, 'utf8');
             const cookies = JSON.parse(cookiesData);
-            await this.context.addCookies(cookies);
+
+            // Validate cookies structure
+            if (!Array.isArray(cookies) || cookies.length === 0) {
+                logger.warn('Invalid cookies file format or empty cookies');
+                return false;
+            }
+
+            // Filter out expired cookies
+            const validCookies = cookies.filter(cookie => {
+                if (!cookie.expires) return true; // Session cookies
+                return new Date(cookie.expires * 1000) > new Date();
+            });
+
+            if (validCookies.length === 0) {
+                logger.warn('All cookies have expired');
+                return false;
+            }
+
+            await this.context.addCookies(validCookies);
+
+            if (this.config.enableLogging) {
+                logger.info('Cookies loaded successfully', {
+                    total: cookies.length,
+                    valid: validCookies.length,
+                    expired: cookies.length - validCookies.length
+                });
+            }
+
             return true;
         } catch (error) {
-            console.warn('Failed to load cookies:', error);
+            const errorMsg = `Failed to load cookies: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            console.warn(errorMsg);
+            logger.error('Cookie load failed', { error: errorMsg });
             return false;
         }
     }
@@ -820,6 +866,11 @@ export class LinkedInService {
                 const delay = Math.floor(Math.random() * 30000) + 60000; // 1-1.5 minutes
                 logger.info('Waiting before next request', { delayMs: delay });
                 await new Promise(resolve => setTimeout(resolve, delay));
+
+                // Save cookies every 5 requests to maintain session
+                if ((i + 1) % 5 === 0) {
+                    await this.refreshCookies();
+                }
             }
         }
 
@@ -855,6 +906,12 @@ export class LinkedInService {
      */
     async close(): Promise<void> {
         try {
+            // Save cookies before closing if we're logged in
+            if (this.isLoggedIn && this.context) {
+                await this.saveCookies();
+                console.log('Session cookies saved before closing');
+            }
+
             if (this.page) {
                 await this.page.close();
                 this.page = null;
@@ -874,6 +931,7 @@ export class LinkedInService {
             console.log('LinkedIn service closed');
         } catch (error) {
             console.error('Error closing browser:', error);
+            logger.error('Error during service close', { error: error instanceof Error ? error.message : 'Unknown error' });
         }
     }
 
@@ -882,5 +940,59 @@ export class LinkedInService {
      */
     isLoggedInStatus(): boolean {
         return this.isLoggedIn;
+    }
+
+    /**
+     * Manually save cookies (useful for long-running operations)
+     */
+    async refreshCookies(): Promise<void> {
+        if (this.isLoggedIn && this.context) {
+            await this.saveCookies();
+            console.log('Cookies refreshed manually');
+        }
+    }
+
+    /**
+     * Check if cookies file exists and is valid
+     */
+    hasValidCookies(): boolean {
+        if (!fs.existsSync(this.config.cookiesPath!)) {
+            return false;
+        }
+
+        try {
+            const cookiesData = fs.readFileSync(this.config.cookiesPath!, 'utf8');
+            const cookies = JSON.parse(cookiesData);
+
+            if (!Array.isArray(cookies) || cookies.length === 0) {
+                return false;
+            }
+
+            // Check if we have any valid (non-expired) cookies
+            const validCookies = cookies.filter(cookie => {
+                if (!cookie.expires) return true; // Session cookies
+                return new Date(cookie.expires * 1000) > new Date();
+            });
+
+            return validCookies.length > 0;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
+     * Clear stored cookies (useful for forcing re-login)
+     */
+    async clearCookies(): Promise<void> {
+        try {
+            if (fs.existsSync(this.config.cookiesPath!)) {
+                await fs.promises.unlink(this.config.cookiesPath!);
+                console.log('Stored cookies cleared');
+                logger.info('Cookies cleared manually');
+            }
+        } catch (error) {
+            console.warn('Failed to clear cookies:', error);
+            logger.error('Failed to clear cookies', { error: error instanceof Error ? error.message : 'Unknown error' });
+        }
     }
 }

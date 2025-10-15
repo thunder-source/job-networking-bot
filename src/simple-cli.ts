@@ -53,20 +53,14 @@ program
     .option('-c, --company <company>', 'Company filter (e.g., "Google")')
     .option('-m, --max-results <number>', 'Maximum number of results to find', '20')
     .option('-o, --output <file>', 'Output file for scraped data (JSON format)')
+    .option('--save-contacts', 'Save scraped profiles as contacts in database')
+    .option('--campaign <name>', 'Campaign name to associate contacts with')
     .option('--headless', 'Run in headless mode (no browser window)')
+    .option('--timeout <timeout>', 'Request timeout in milliseconds', '30000')
     .action(async (options) => {
-        console.log(chalk.blue('🔍 Searching for recruiters...'));
-        console.log(chalk.gray(`Keywords: ${options.keywords}`));
-        console.log(chalk.gray(`Max Results: ${options.maxResults}`));
-        if (options.location) console.log(chalk.gray(`Location: ${options.location}`));
-        if (options.industry) console.log(chalk.gray(`Industry: ${options.industry}`));
-        if (options.company) console.log(chalk.gray(`Company: ${options.company}`));
-
-        console.log(chalk.yellow('⚠️  This is a placeholder command. Full implementation requires LinkedIn credentials.'));
-        console.log(chalk.blue('📝 To implement:'));
-        console.log(chalk.gray('• Set up LinkedIn credentials in .env file'));
-        console.log(chalk.gray('• Configure OpenAI API key for message generation'));
-        console.log(chalk.gray('• Run "cold-email-bot config" to set up configuration'));
+        const { createSearchCommand } = await import('./commands/search.js');
+        const searchCommand = createSearchCommand();
+        await searchCommand.parseAsync(['search', ...process.argv.slice(3)]);
     });
 
 // Connect command
@@ -173,15 +167,10 @@ program
 program
     .command('templates')
     .description('Manage message templates (list, add, edit, delete)')
-    .action(() => {
-        console.log(chalk.blue('📝 Message Templates'));
-        console.log(chalk.gray('Use subcommands to manage templates:'));
-        console.log(chalk.gray('  list    - List all templates'));
-        console.log(chalk.gray('  add     - Add a new template'));
-        console.log(chalk.gray('  edit    - Edit an existing template'));
-        console.log(chalk.gray('  delete  - Delete a template'));
-        console.log(chalk.gray('  show    - Show template details'));
-        console.log(chalk.yellow('⚠️  This is a placeholder command. Full implementation requires template service.'));
+    .action(async () => {
+        const { createTemplatesCommand } = await import('./commands/templates.js');
+        const templatesCommand = createTemplatesCommand();
+        await templatesCommand.parseAsync(['templates', ...process.argv.slice(3)]);
     });
 
 // Contacts command
@@ -203,15 +192,10 @@ program
 program
     .command('config')
     .description('Set up API keys and preferences')
-    .action(() => {
-        console.log(chalk.blue('⚙️  Configuration'));
-        console.log(chalk.gray('Use subcommands to manage configuration:'));
-        console.log(chalk.gray('  set     - Set configuration values'));
-        console.log(chalk.gray('  get     - Get configuration values'));
-        console.log(chalk.gray('  list    - List all configuration'));
-        console.log(chalk.gray('  reset   - Reset configuration to defaults'));
-        console.log(chalk.gray('  validate - Validate current configuration'));
-        console.log(chalk.yellow('⚠️  This is a placeholder command. Full implementation requires config service.'));
+    .action(async () => {
+        const { createConfigCommand } = await import('./commands/config.js');
+        const configCommand = createConfigCommand();
+        await configCommand.parseAsync(['config', ...process.argv.slice(3)]);
     });
 
 // Test command

@@ -117,12 +117,20 @@ export function createSearchCommand(): Command {
                             console.log(chalk.yellow(`Campaign "${options.campaign}" not found. Creating new campaign...`));
                             const savedCampaign = await dbService.createCampaign({
                                 name: options.campaign,
-                                status: 'active',
+                                status: 'active' as any,
+                                targetCriteria: {
+                                    locations: options.location ? [{ country: options.location }] : undefined,
+                                    industries: options.industry ? [options.industry] : undefined,
+                                    companies: options.company ? [options.company] : undefined
+                                },
                                 settings: {
-                                    keywords: options.keywords,
-                                    location: options.location,
-                                    industry: options.industry,
-                                    company: options.company
+                                    maxMessagesPerDay: 50,
+                                    maxMessagesPerHour: 10,
+                                    delayBetweenMessages: 300000,
+                                    personalizeMessages: true,
+                                    followUpEnabled: true,
+                                    followUpDelay: 7,
+                                    maxFollowUps: 3
                                 }
                             });
                             campaignId = savedCampaign._id;
@@ -133,13 +141,15 @@ export function createSearchCommand(): Command {
                     for (const profile of profiles) {
                         await dbService.createContact({
                             name: profile.name,
+                            email: `${profile.name.toLowerCase().replace(/\s+/g, '.')}@example.com`, // Placeholder email
                             linkedinUrl: profile.profileUrl,
                             company: profile.company,
                             position: profile.headline,
-                            location: profile.location,
-                            about: profile.about,
-                            campaignId: campaignId,
-                            status: 'new'
+                            location: profile.location ? { country: profile.location } : undefined,
+                            status: 'pending' as any,
+                            source: 'linkedin' as any,
+                            priority: 'medium' as any,
+                            campaigns: campaignId ? [campaignId] : undefined
                         });
                         savedCount++;
                     }

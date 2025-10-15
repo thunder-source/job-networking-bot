@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "cli": "node dist/src/cli.js",
+    "full-cli": "node dist/src/full-cli.js",
     "dev": "nodemon",
     "build": "tsc",
     "build:watch": "tsc --watch",

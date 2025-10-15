@@ -14,6 +14,7 @@ A comprehensive Node.js CLI tool for automated LinkedIn networking and cold emai
 
 ### Advanced Features
 - **🛡️ Rate Limiting & Safety**: Built-in LinkedIn rate limiting and jail detection
+- **🍪 Session Persistence**: Automatic cookie storage to avoid repeated logins
 - **📝 Template System**: Customizable message templates with variable substitution
 - **🔍 Email Lookup**: Find email addresses using Hunter.io and RocketReach APIs
 - **📅 Smart Scheduling**: Optimal timing for LinkedIn actions and email sending
@@ -339,6 +340,46 @@ cold-email-bot followup --source contacts.json --type coldOutreach --verify-emai
 # Schedule multiple follow-ups
 cold-email-bot followup --campaign "Q1 Outreach" --schedule "3d,7d,14d" --type followup
 ```
+
+## 🍪 Session Management & Cookies
+
+The Cold Email Bot automatically saves your LinkedIn session cookies to avoid repeated logins. This feature ensures seamless automation without manual intervention.
+
+### Cookie Features
+- **Automatic Storage**: Cookies are saved after successful login
+- **Session Persistence**: Maintains login state across bot restarts
+- **Expiration Handling**: Automatically filters out expired cookies
+- **Periodic Refresh**: Cookies are refreshed during long-running operations
+- **Manual Management**: CLI commands for cookie management
+
+### Cookie Management Commands
+
+```bash
+# Check cookie status
+cold-email-bot linkedin cookies status
+
+# Clear stored cookies (force re-login)
+cold-email-bot linkedin cookies clear
+
+# Refresh cookies from current session
+cold-email-bot linkedin cookies refresh
+```
+
+### How It Works
+1. **First Login**: When you login for the first time, cookies are automatically saved
+2. **Subsequent Runs**: The bot loads existing cookies and checks if you're still logged in
+3. **Auto-Recovery**: If cookies are valid, you can use LinkedIn commands without logging in again
+4. **Session Maintenance**: Cookies are periodically refreshed during long operations
+
+### Cookie File Location
+- **Default Path**: `./linkedin-cookies.json`
+- **Configurable**: Set custom path via `cookiesPath` in service config
+- **Automatic Cleanup**: Expired cookies are automatically filtered out
+
+### Troubleshooting Cookies
+- **Invalid Cookies**: Run `cold-email-bot linkedin cookies clear` to force re-login
+- **Session Expired**: The bot will automatically detect and prompt for re-login
+- **File Permissions**: Ensure the bot has write permissions to the cookie file location
 
 ## 🛡️ Best Practices
 

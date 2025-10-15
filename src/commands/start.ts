@@ -6,8 +6,8 @@ import { AIService } from '../services/aiService.js';
 import DatabaseService from '../services/databaseService.js';
 import { SchedulerService } from '../services/schedulerService.js';
 import { TemplateService } from '../services/templateService.js';
-import { Campaign } from '../models/index.js';
-import { Contact } from '../models/index.js';
+import { CampaignStatus, ContactStatus, ContactSource } from '../types/index.js';
+import { EmailService } from '../services/emailService.js';
 
 export function createStartCommand(): Command {
     const startCommand = new Command('start')
@@ -30,7 +30,49 @@ export function createStartCommand(): Command {
                 const dbService = DatabaseService;
                 await dbService.initialize();
                 const templateService = new TemplateService();
-                const schedulerService = new SchedulerService();
+                const emailService = new EmailService({
+                    provider: 'gmail',
+                    credentials: {
+                        email: process.env.EMAIL_USER || '',
+                        password: process.env.EMAIL_PASS || ''
+                    },
+                    trackingBaseUrl: 'https://your-domain.com/track',
+                    unsubscribeBaseUrl: 'https://your-domain.com/unsubscribe'
+                });
+                const linkedinService = new LinkedInService({
+                    headless: options.headless || false,
+                    timeout: 30000
+                });
+                const schedulerService = new SchedulerService(
+                    {
+                        enabled: true,
+                        timezone: 'UTC',
+                        workingHours: {
+                            start: '09:00',
+                            end: '17:00',
+                            days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+                        },
+                        followUpSettings: {
+                            day3Reminder: true,
+                            day7FollowUp: true,
+                            day14FollowUp: true,
+                            day21FinalFollowUp: true,
+                            maxFollowUps: 3
+                        },
+                        rateLimiting: {
+                            maxTasksPerHour: 10,
+                            delayBetweenTasks: 60000
+                        },
+                        retrySettings: {
+                            maxRetries: 3,
+                            retryDelay: 300000,
+                            exponentialBackoff: true
+                        }
+                    },
+                    emailService,
+                    linkedinService,
+                    DatabaseService
+                );
                 const aiService = new AIService();
 
                 // Create or get campaign
@@ -38,13 +80,22 @@ export function createStartCommand(): Command {
                 if (!campaign) {
                     campaign = await dbService.createCampaign({
                         name: options.campaign,
-                        status: 'active',
+                        status: CampaignStatus.ACTIVE,
+                        targetCriteria: {
+                            industries: options.industry ? [options.industry] : [],
+                            locations: options.location ? [{
+                                city: options.location,
+                                country: 'US'
+                            }] : []
+                        },
                         settings: {
-                            maxContacts: parseInt(options.maxContacts),
-                            keywords: options.keywords,
-                            location: options.location,
-                            industry: options.industry,
-                            template: options.template
+                            maxMessagesPerDay: 50,
+                            maxMessagesPerHour: 10,
+                            delayBetweenMessages: 300000,
+                            personalizeMessages: true,
+                            followUpEnabled: true,
+                            followUpDelay: 7,
+                            maxFollowUps: 3
                         }
                     });
                     console.log(chalk.green(`Created new campaign: ${options.campaign}`));
@@ -55,11 +106,6 @@ export function createStartCommand(): Command {
                 // LinkedIn automation (if not email-only)
                 if (!options.emailOnly) {
                     spinner.text = 'Setting up LinkedIn automation...';
-
-                    const linkedinService = new LinkedInService({
-                        headless: options.headless || false,
-                        timeout: 30000
-                    });
 
                     // Login to LinkedIn
                     const credentials: LinkedInCredentials = {
@@ -100,9 +146,13 @@ export function createStartCommand(): Command {
                             linkedinUrl: profile.profileUrl,
                             company: profile.company,
                             position: profile.headline,
-                            location: profile.location,
-                            campaignId: campaign._id,
-                            status: 'new'
+                            location: profile.location ? {
+                                city: profile.location,
+                                country: 'US'
+                            } : undefined,
+                            campaigns: [campaign._id!.toString()],
+                            status: ContactStatus.PENDING,
+                            source: ContactSource.LINKEDIN
                         });
                     }
 
@@ -111,12 +161,12 @@ export function createStartCommand(): Command {
                         spinner.text = 'Sending connection requests...';
 
                         // Get template for connection messages
-                        let template = null;
+                        let template: any = null;
                         if (options.template) {
                             template = await templateService.getTemplateById(options.template);
                         }
 
-                        const profilesToConnect = profiles.map(profile => {
+                        const profilesToConnect = await Promise.all(profiles.map(async profile => {
                             let message = '';
                             if (template) {
                                 // Generate personalized message using AI
@@ -143,7 +193,7 @@ export function createStartCommand(): Command {
                                 url: profile.profileUrl,
                                 message
                             };
-                        });
+                        }));
 
                         const connectionResults = await linkedinService.sendBulkConnectionRequests(profilesToConnect);
                         const successCount = connectionResults.filter(r => r.success).length;
@@ -159,7 +209,7 @@ export function createStartCommand(): Command {
                     spinner.text = 'Setting up email automation...';
 
                     // Get contacts for this campaign
-                    const contacts = await dbService.getContacts({ campaignId: campaign._id });
+                    const contacts = await dbService.getContacts({ campaigns: campaign._id!.toString() });
                     console.log(chalk.blue(`Found ${contacts.length} contacts for email outreach`));
 
                     // Schedule follow-up emails
@@ -169,20 +219,20 @@ export function createStartCommand(): Command {
                         for (const contact of contacts) {
                             if (contact.email) {
                                 // Schedule initial email
-                                await schedulerService.scheduleTask({
-                                    contactId: contact._id,
-                                    campaignId: campaign._id,
-                                    type: 'EMAIL_FOLLOWUP',
-                                    scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
-                                });
+                                await schedulerService.scheduleFollowUp(
+                                    contact._id!.toString(),
+                                    campaign._id!.toString(),
+                                    'FOLLOW_UP_EMAIL' as any,
+                                    1 // 1 day delay
+                                );
 
                                 // Schedule follow-up emails
-                                await schedulerService.scheduleTask({
-                                    contactId: contact._id,
-                                    campaignId: campaign._id,
-                                    type: 'EMAIL_FOLLOWUP',
-                                    scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
-                                });
+                                await schedulerService.scheduleFollowUp(
+                                    contact._id!.toString(),
+                                    campaign._id!.toString(),
+                                    'FOLLOW_UP_EMAIL' as any,
+                                    7 // 7 days delay
+                                );
                             }
                         }
 
@@ -191,7 +241,7 @@ export function createStartCommand(): Command {
                 }
 
                 // Update campaign status
-                await dbService.updateCampaign(campaign._id, { status: 'running' });
+                await dbService.updateCampaign(campaign._id!.toString(), { status: CampaignStatus.ACTIVE });
 
                 spinner.succeed(chalk.green('Campaign started successfully!'));
 

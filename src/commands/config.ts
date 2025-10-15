@@ -7,15 +7,7 @@ import * as dotenv from 'dotenv';
 
 export function createConfigCommand(): Command {
     const configCommand = new Command('config')
-        .description('Set up API keys and preferences')
-        .action(() => {
-            console.log(chalk.blue('Use subcommands to manage configuration:'));
-            console.log(chalk.gray('  set     - Set configuration values'));
-            console.log(chalk.gray('  get     - Get configuration values'));
-            console.log(chalk.gray('  list    - List all configuration'));
-            console.log(chalk.gray('  reset   - Reset configuration to defaults'));
-            console.log(chalk.gray('  validate - Validate current configuration'));
-        });
+        .description('Set up API keys and preferences');
 
     // Set config subcommand
     configCommand

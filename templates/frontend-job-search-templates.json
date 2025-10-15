@@ -1,0 +1,64 @@
+{
+  "templates": [
+    {
+      "name": "HR_Connection_Request",
+      "type": "connection",
+      "category": "job_search",
+      "content": "Hi {{name}}, I'm a passionate Front-End Developer with expertise in React, JavaScript, and modern web technologies. I noticed you work in talent acquisition at {{company}} and would love to connect to learn more about opportunities in your organization. I'm particularly interested in how your team is building innovative user experiences.",
+      "variables": ["name", "company"],
+      "tags": ["hr", "recruiter", "connection", "frontend"],
+      "usageCount": 0,
+      "successRate": null
+    },
+    {
+      "name": "Hiring_Manager_Outreach",
+      "type": "connection", 
+      "category": "job_search",
+      "content": "Hello {{name}}, I came across your profile and was impressed by your work as {{position}} at {{company}}. As a Front-End Developer with strong experience in React, TypeScript, and modern JavaScript frameworks, I'd love to connect and share insights about front-end development trends. I'm always interested in learning from industry leaders like yourself.",
+      "variables": ["name", "position", "company"],
+      "tags": ["hiring_manager", "technical_lead", "connection", "frontend"],
+      "usageCount": 0,
+      "successRate": null
+    },
+    {
+      "name": "Cold_Email_HR_Professional",
+      "type": "coldOutreach",
+      "category": "job_search", 
+      "content": "Subject: Front-End Developer Eager to Contribute to {{company}}'s Success\n\nDear {{name}},\n\nI hope this email finds you well. My name is Praidtya Manjhi, and I'm a passionate Front-End Developer with expertise in React, JavaScript, TypeScript, and modern web development practices.\n\nI've been following {{company}}'s innovative work in {{industry}} and am impressed by your commitment to creating exceptional user experiences. With my background in building responsive, performant web applications and my strong foundation in front-end technologies, I believe I could make a valuable contribution to your development team.\n\nHere's what I bring to the table:\n• Strong proficiency in React, JavaScript, and TypeScript\n• Experience with modern CSS frameworks and responsive design\n• Understanding of web performance optimization and accessibility\n• Collaborative mindset and passion for clean, maintainable code\n\nI would love the opportunity to discuss how my skills and enthusiasm could benefit {{company}}. Would you be available for a brief conversation this week?\n\nThank you for your time and consideration.\n\nBest regards,\nPraidtya Manjhi\n[Your Contact Information]",
+      "variables": ["name", "company", "industry"],
+      "tags": ["hr", "cold_email", "frontend", "job_application"],
+      "usageCount": 0,
+      "successRate": null
+    },
+    {
+      "name": "Technical_Lead_Outreach",
+      "type": "coldOutreach",
+      "category": "job_search",
+      "content": "Subject: Front-End Developer Seeking Technical Discussion\n\nHi {{name}},\n\nI hope you're doing well. I'm Praidtya Manjhi, a Front-End Developer with a passion for creating exceptional user experiences through clean, efficient code.\n\nI noticed your technical leadership role at {{company}} and was particularly interested in {{specific_project_or_tech}} that your team has been working on. As someone who's deeply invested in front-end development best practices, I'd love to learn more about your team's approach to {{relevant_technology_or_challenge}}.\n\nMy experience includes:\n• Building scalable React applications with TypeScript\n• Implementing responsive designs and optimizing web performance\n• Working with modern development tools and CI/CD pipelines\n• Collaborating effectively in agile development environments\n\nI'm currently exploring new opportunities where I can contribute to meaningful projects and grow as a developer. I'd be grateful for the chance to discuss potential opportunities at {{company}} or simply share insights about front-end development trends.\n\nWould you be open to a brief conversation?\n\nThanks for your time,\nPraidtya Manjhi",
+      "variables": ["name", "company", "specific_project_or_tech", "relevant_technology_or_challenge"],
+      "tags": ["technical_lead", "cold_email", "frontend", "networking"],
+      "usageCount": 0,
+      "successRate": null
+    },
+    {
+      "name": "Follow_Up_After_Connection",
+      "type": "followup",
+      "category": "job_search",
+      "content": "Hi {{name}},\n\nThank you for accepting my connection request! I appreciate the opportunity to connect.\n\nAs I mentioned, I'm a Front-End Developer with experience in React, JavaScript, and modern web technologies. I'm currently exploring new opportunities where I can contribute to innovative projects and continue growing as a developer.\n\nI'm particularly interested in {{company}} because of {{reason_for_interest}}. I'd love to learn more about your team's current projects and any potential opportunities that might align with my skills and interests.\n\nWould you be available for a brief call this week to discuss how I might contribute to your organization?\n\nThank you again for connecting!\n\nBest regards,\nPraidtya Manjhi",
+      "variables": ["name", "company", "reason_for_interest"],
+      "tags": ["followup", "connection_accepted", "frontend", "job_search"],
+      "usageCount": 0,
+      "successRate": null
+    },
+    {
+      "name": "Thank_You_After_Response",
+      "type": "thankyou",
+      "category": "job_search",
+      "content": "Hi {{name}},\n\nThank you so much for taking the time to respond to my message. I really appreciate your insights about {{topic_discussed}}.\n\nI'm excited about the possibility of contributing to {{company}} and would love to move forward with the next steps you mentioned. Please let me know what additional information you might need from me, such as my portfolio, GitHub profile, or any specific documentation.\n\nI'm available for interviews or further discussions at your convenience. Thank you again for your time and consideration.\n\nLooking forward to hearing from you!\n\nBest regards,\nPraidtya Manjhi",
+      "variables": ["name", "topic_discussed", "company"],
+      "tags": ["thank_you", "response_received", "next_steps"],
+      "usageCount": 0,
+      "successRate": null
+    }
+  ]
+}

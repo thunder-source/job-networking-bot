@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { TemplateService } from '../services/templateService.js';
 import { Template } from '../models/index.js';
+import { TemplateType } from '../types/index.js';
 
 export function createTemplatesCommand(): Command {
     const templatesCommand = new Command('templates')
@@ -27,7 +28,7 @@ export function createTemplatesCommand(): Command {
 
             try {
                 const templateService = new TemplateService();
-                let templates = await templateService.getAllTemplates();
+                let templates = await templateService.getTemplatesByType(TemplateType.CONNECTION);
 
                 if (options.type) {
                     templates = templates.filter(t => t.type === options.type);
@@ -140,7 +141,7 @@ export function createTemplatesCommand(): Command {
                     variables
                 });
 
-                const savedTemplate = await templateService.saveTemplate(template);
+                const savedTemplate = await templateService.createTemplate(template);
                 spinner.succeed(chalk.green(`Template "${savedTemplate.name}" created successfully`));
 
                 console.log(chalk.blue('\n📝 Template Details:'));
@@ -171,7 +172,8 @@ export function createTemplatesCommand(): Command {
                 if (options.id) {
                     template = await templateService.getTemplateById(options.id);
                 } else if (options.name) {
-                    template = await templateService.getTemplate(options.name);
+                    const searchResults = await templateService.searchTemplates(options.name);
+                    template = searchResults.find(t => t.name === options.name) || null;
                 } else {
                     spinner.fail('Please provide either --name or --id');
                     return;
@@ -226,7 +228,7 @@ export function createTemplatesCommand(): Command {
                     const variableRegex = /\{(\w+)\}/g;
                     template.variables = [...new Set(Array.from(answers.content.matchAll(variableRegex), m => m[1]))];
 
-                    await templateService.saveTemplate(template);
+                    await templateService.createTemplate(template);
                     console.log(chalk.green(`Template "${template.name}" updated successfully`));
                 } else {
                     console.log(chalk.blue('\n📝 Current Template:'));
@@ -260,7 +262,8 @@ export function createTemplatesCommand(): Command {
                 if (options.id) {
                     template = await templateService.getTemplateById(options.id);
                 } else if (options.name) {
-                    template = await templateService.getTemplate(options.name);
+                    const searchResults = await templateService.searchTemplates(options.name);
+                    template = searchResults.find(t => t.name === options.name) || null;
                 } else {
                     spinner.fail('Please provide either --name or --id');
                     return;
@@ -314,7 +317,8 @@ export function createTemplatesCommand(): Command {
                 if (options.id) {
                     template = await templateService.getTemplateById(options.id);
                 } else if (options.name) {
-                    template = await templateService.getTemplate(options.name);
+                    const searchResults = await templateService.searchTemplates(options.name);
+                    template = searchResults.find(t => t.name === options.name) || null;
                 } else {
                     spinner.fail('Please provide either --name or --id');
                     return;

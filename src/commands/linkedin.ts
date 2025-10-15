@@ -426,5 +426,90 @@ export function createLinkedInCommand(): Command {
             }
         });
 
+    // Cookie management command with subcommands
+    const cookiesCommand = new Command('cookies')
+        .description('Manage LinkedIn session cookies');
+
+    cookiesCommand
+        .command('status')
+        .description('Check cookie status and validity')
+        .action(async () => {
+            const spinner = ora('Checking cookie status...').start();
+
+            try {
+                const linkedinService = new LinkedInService({
+                    headless: true,
+                    timeout: 10000
+                });
+
+                const hasValidCookies = linkedinService.hasValidCookies();
+
+                if (hasValidCookies) {
+                    spinner.succeed(chalk.green('Valid cookies found! You can use LinkedIn commands without logging in.'));
+                } else {
+                    spinner.fail(chalk.yellow('No valid cookies found. You need to login first.'));
+                }
+
+                await linkedinService.close();
+            } catch (error) {
+                spinner.fail(chalk.red(`Error checking cookies: ${error instanceof Error ? error.message : 'Unknown error'}`));
+            }
+        });
+
+    cookiesCommand
+        .command('clear')
+        .description('Clear stored cookies (force re-login)')
+        .action(async () => {
+            const spinner = ora('Clearing stored cookies...').start();
+
+            try {
+                const linkedinService = new LinkedInService({
+                    headless: true,
+                    timeout: 10000
+                });
+
+                await linkedinService.clearCookies();
+                spinner.succeed(chalk.green('Cookies cleared successfully! You will need to login again.'));
+
+                await linkedinService.close();
+            } catch (error) {
+                spinner.fail(chalk.red(`Error clearing cookies: ${error instanceof Error ? error.message : 'Unknown error'}`));
+            }
+        });
+
+    cookiesCommand
+        .command('refresh')
+        .description('Refresh cookies from current session')
+        .action(async () => {
+            const spinner = ora('Refreshing cookies...').start();
+
+            try {
+                const linkedinService = new LinkedInService({
+                    headless: linkedinCommand.opts().headless || false,
+                    timeout: parseInt(linkedinCommand.opts().timeout)
+                });
+
+                // Try to load existing session
+                const cookiesLoaded = await (linkedinService as any).loadCookies();
+                if (cookiesLoaded) {
+                    const isLoggedIn = await (linkedinService as any).checkLoginStatus();
+                    if (isLoggedIn) {
+                        await (linkedinService as any).refreshCookies();
+                        spinner.succeed(chalk.green('Cookies refreshed successfully!'));
+                    } else {
+                        spinner.fail(chalk.yellow('No active session found. Please login first.'));
+                    }
+                } else {
+                    spinner.fail(chalk.yellow('No cookies found. Please login first.'));
+                }
+
+                await linkedinService.close();
+            } catch (error) {
+                spinner.fail(chalk.red(`Error refreshing cookies: ${error instanceof Error ? error.message : 'Unknown error'}`));
+            }
+        });
+
+    linkedinCommand.addCommand(cookiesCommand);
+
     return linkedinCommand;
 }
