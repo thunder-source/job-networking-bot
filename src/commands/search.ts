@@ -31,19 +31,40 @@ export function createSearchCommand(): Command {
                 const dbService = DatabaseService;
                 await dbService.initialize();
 
-                // Login to LinkedIn
-                const credentials: LinkedInCredentials = {
-                    email: process.env.LINKEDIN_EMAIL || '',
-                    password: process.env.LINKEDIN_PASSWORD || ''
-                };
+                // Check if we have valid cookies first
+                const hasValidCookies = linkedinService.hasValidCookies();
 
-                if (!credentials.email || !credentials.password) {
-                    spinner.fail('LinkedIn credentials not found. Please set LINKEDIN_EMAIL and LINKEDIN_PASSWORD environment variables.');
-                    return;
+                if (hasValidCookies) {
+                    spinner.text = 'Loading existing session...';
+                    // Try to load existing session
+                    const cookiesLoaded = await (linkedinService as any).loadCookies();
+                    if (cookiesLoaded) {
+                        const isLoggedIn = await (linkedinService as any).checkLoginStatus();
+                        if (isLoggedIn) {
+                            spinner.succeed('Using existing LinkedIn session');
+                        } else {
+                            spinner.warn('Session expired, logging in...');
+                            await linkedinService.login({
+                                email: process.env.LINKEDIN_EMAIL || '',
+                                password: process.env.LINKEDIN_PASSWORD || ''
+                            });
+                        }
+                    }
+                } else {
+                    // Login to LinkedIn
+                    const credentials: LinkedInCredentials = {
+                        email: process.env.LINKEDIN_EMAIL || '',
+                        password: process.env.LINKEDIN_PASSWORD || ''
+                    };
+
+                    if (!credentials.email || !credentials.password) {
+                        spinner.fail('LinkedIn credentials not found. Please set LINKEDIN_EMAIL and LINKEDIN_PASSWORD environment variables.');
+                        return;
+                    }
+
+                    spinner.text = 'Logging in to LinkedIn...';
+                    await linkedinService.login(credentials);
                 }
-
-                spinner.text = 'Logging in to LinkedIn...';
-                await linkedinService.login(credentials);
 
                 // Build search filters
                 const searchFilters: SearchFilters = {

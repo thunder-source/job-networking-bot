@@ -77,7 +77,6 @@ const contactSchema = new Schema<IContactDocument>({
     email: {
         type: String,
         required: true,
-        unique: true,
         lowercase: true,
         trim: true,
         match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
@@ -188,7 +187,8 @@ const contactSchema = new Schema<IContactDocument>({
 });
 
 // Indexes for better query performance
-contactSchema.index({ email: 1 });
+contactSchema.index({ email: 1 }, { unique: true });
+contactSchema.index({ name: 1 });
 contactSchema.index({ status: 1 });
 contactSchema.index({ source: 1 });
 contactSchema.index({ company: 1 });

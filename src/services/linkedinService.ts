@@ -36,6 +36,8 @@ export interface LinkedInServiceConfig {
     userDataDir?: string;
     cookiesPath?: string;
     timeout?: number;
+    profileTimeout?: number; // Separate timeout for profile scraping
+    loginTimeout?: number; // Separate timeout for login operations
     retryAttempts?: number;
     limits?: LimitConfig;
     timeSlot?: TimeSlot;
@@ -71,7 +73,9 @@ export class LinkedInService {
             headless: false, // Set to true for production
             userDataDir: path.join(process.cwd(), 'linkedin-data'),
             cookiesPath: path.join(process.cwd(), 'linkedin-cookies.json'),
-            timeout: 30000,
+            timeout: 60000, // Increased from 30s to 60s
+            profileTimeout: 90000, // 90s for profile scraping (most intensive)
+            loginTimeout: 45000, // 45s for login operations
             retryAttempts: 3,
             enableLogging: true,
             limits: {
@@ -186,7 +190,7 @@ export class LinkedInService {
      * Load cookies from file for session persistence
      */
     private async loadCookies(): Promise<boolean> {
-        if (!this.context || !fs.existsSync(this.config.cookiesPath!)) {
+        if (!fs.existsSync(this.config.cookiesPath!)) {
             if (this.config.enableLogging) {
                 logger.info('No cookies file found, will need to login', {
                     path: this.config.cookiesPath
@@ -216,7 +220,10 @@ export class LinkedInService {
                 return false;
             }
 
-            await this.context.addCookies(validCookies);
+            // Add cookies to the browser context if page is available
+            if (this.page && this.browser) {
+                await this.page.context().addCookies(validCookies);
+            }
 
             if (this.config.enableLogging) {
                 logger.info('Cookies loaded successfully', {
@@ -242,19 +249,58 @@ export class LinkedInService {
         if (!this.page) return false;
 
         try {
-            await this.page.goto('https://www.linkedin.com/feed/', {
-                waitUntil: 'networkidle',
-                timeout: this.config.timeout
-            });
+            // Try multiple URLs to check login status
+            const urlsToTry = [
+                'https://www.linkedin.com/feed/',
+                'https://www.linkedin.com/in/me/',
+                'https://www.linkedin.com/mynetwork/'
+            ];
 
-            // Check for login indicators
-            const isLoggedIn = await this.page.evaluate(() => {
-                return !document.querySelector('[data-test-id="sign-in-form"]') &&
-                    !document.querySelector('.login-form') &&
-                    document.querySelector('[data-generated-suggestion-target]') !== null;
-            });
+            for (const url of urlsToTry) {
+                try {
+                    await this.page.goto(url, {
+                        waitUntil: 'domcontentloaded',
+                        timeout: 10000
+                    });
 
-            return isLoggedIn;
+                    // Wait a moment for page to load
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    // Check for login indicators
+                    const isLoggedIn = await this.page.evaluate(() => {
+                        // Check for elements that indicate we're logged in
+                        const loggedInIndicators = [
+                            document.querySelector('[data-generated-suggestion-target]'),
+                            document.querySelector('.global-nav'),
+                            document.querySelector('[data-test-id="main-nav"]'),
+                            document.querySelector('.feed-container'),
+                            document.querySelector('.profile-photo')
+                        ];
+
+                        // Check for elements that indicate we're NOT logged in
+                        const notLoggedInIndicators = [
+                            document.querySelector('[data-test-id="sign-in-form"]'),
+                            document.querySelector('.login-form'),
+                            document.querySelector('input[name="session_key"]'),
+                            document.querySelector('input[name="session_password"]')
+                        ];
+
+                        const hasLoggedInIndicator = loggedInIndicators.some(el => el !== null);
+                        const hasNotLoggedInIndicator = notLoggedInIndicators.some(el => el !== null);
+
+                        return hasLoggedInIndicator && !hasNotLoggedInIndicator;
+                    });
+
+                    if (isLoggedIn) {
+                        return true;
+                    }
+                } catch (error) {
+                    // Continue to next URL if this one fails
+                    continue;
+                }
+            }
+
+            return false;
         } catch (error) {
             return false;
         }
@@ -287,28 +333,151 @@ export class LinkedInService {
                 }
             }
 
-            // Navigate to login page
-            await this.page.goto('https://www.linkedin.com/login', {
-                waitUntil: 'networkidle',
-                timeout: this.config.timeout
-            });
+            // Navigate to login page with retry logic
+            let retryCount = 0;
+            const maxRetries = 3;
+
+            while (retryCount < maxRetries) {
+                try {
+                    await this.page.goto('https://www.linkedin.com/login', {
+                        waitUntil: 'networkidle',
+                        timeout: this.config.loginTimeout || this.config.timeout
+                    });
+                    break; // Success, exit retry loop
+                } catch (error) {
+                    retryCount++;
+                    if (retryCount >= maxRetries) {
+                        throw new Error(`Failed to connect to LinkedIn after ${maxRetries} attempts. This might be due to network issues or LinkedIn blocking the connection. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    }
+
+                    context.log('warn', `Connection attempt ${retryCount} failed, retrying...`, { error: error instanceof Error ? error.message : 'Unknown error' });
+                    await new Promise(resolve => setTimeout(resolve, 5000 * retryCount)); // Exponential backoff
+                }
+            }
 
             await this.randomDelay();
 
-            // Fill in email
-            await this.page.fill('#username', credentials.email);
+            // Wait for page to be ready and check what's actually on the page
+            await this.page.waitForLoadState('domcontentloaded');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Debug: log the current page content
+            const pageContent = await this.page.content();
+            console.log('Page loaded, looking for login form...');
+
+            // Try multiple selectors for username field
+            const usernameSelectors = [
+                '#username',
+                'input[name="session_key"]',
+                'input[type="email"]',
+                'input[placeholder*="Email"]',
+                'input[placeholder*="email"]',
+                'input[aria-label*="Email"]',
+                '.login__form input[type="text"]'
+            ];
+
+            let usernameField = null;
+            for (const selector of usernameSelectors) {
+                try {
+                    usernameField = await this.page.waitForSelector(selector, { timeout: 5000 });
+                    if (usernameField) {
+                        console.log(`Found username field with selector: ${selector}`);
+                        break;
+                    }
+                } catch (error) {
+                    // Continue to next selector
+                    continue;
+                }
+            }
+
+            if (!usernameField) {
+                // Take a screenshot for debugging
+                await this.page.screenshot({ path: 'linkedin-login-debug.png' });
+                throw new Error('Username field not found on login page. Check linkedin-login-debug.png for debugging.');
+            }
+
+            // Find which selector worked and use it to fill the field
+            let workingSelector = null;
+            for (const selector of usernameSelectors) {
+                try {
+                    await this.page.waitForSelector(selector, { timeout: 1000 });
+                    workingSelector = selector;
+                    break;
+                } catch {
+                    continue;
+                }
+            }
+
+            if (workingSelector) {
+                await this.page.fill(workingSelector, credentials.email);
+            } else {
+                throw new Error('Could not find a working selector for username field');
+            }
             await this.randomDelay();
 
-            // Fill in password
-            await this.page.fill('#password', credentials.password);
+            // Try multiple selectors for password field
+            const passwordSelectors = [
+                '#password',
+                'input[name="session_password"]',
+                'input[type="password"]',
+                'input[placeholder*="Password"]',
+                'input[placeholder*="password"]',
+                'input[aria-label*="Password"]'
+            ];
+
+            let passwordField = null;
+            for (const selector of passwordSelectors) {
+                try {
+                    passwordField = await this.page.waitForSelector(selector, { timeout: 5000 });
+                    if (passwordField) {
+                        console.log(`Found password field with selector: ${selector}`);
+                        break;
+                    }
+                } catch (error) {
+                    continue;
+                }
+            }
+
+            if (!passwordField) {
+                throw new Error('Password field not found on login page');
+            }
+
+            // Find which selector worked and use it to fill the field
+            let workingPasswordSelector = null;
+            for (const selector of passwordSelectors) {
+                try {
+                    await this.page.waitForSelector(selector, { timeout: 1000 });
+                    workingPasswordSelector = selector;
+                    break;
+                } catch {
+                    continue;
+                }
+            }
+
+            if (workingPasswordSelector) {
+                await this.page.fill(workingPasswordSelector, credentials.password);
+            } else {
+                throw new Error('Could not find a working selector for password field');
+            }
             await this.randomDelay();
 
-            // Click login button
-            await this.page.click('button[type="submit"]');
+            // Click login button with better selector handling
+            const loginButton = await this.page.waitForSelector('button[type="submit"], button[data-litms-control-urn*="login-submit"], .login__form_action_container button', { timeout: 10000 });
+            if (!loginButton) {
+                throw new Error('Login button not found on login page');
+            }
+            await loginButton.click();
             await this.randomDelay();
 
-            // Wait for page to load and check for 2FA
-            await this.page.waitForLoadState('networkidle', { timeout: this.config.timeout });
+            // Wait for page to load with more flexible approach
+            try {
+                await this.page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+            } catch (error) {
+                context.log('warn', 'DOM content loaded timeout, continuing anyway');
+            }
+
+            // Give page a moment to fully load
+            await this.randomDelay();
 
             // Check if 2FA is required
             const is2FARequired = await this.page.evaluate(() => {
@@ -331,8 +500,32 @@ export class LinkedInService {
                 await this.randomDelay();
             }
 
-            // Check if login was successful
-            const loginSuccess = await this.checkLoginStatus();
+            // Check if login was successful with multiple attempts
+            let loginSuccess = false;
+            let attempts = 0;
+            const maxAttempts = 3;
+
+            while (!loginSuccess && attempts < maxAttempts) {
+                attempts++;
+                context.log('debug', `Checking login status, attempt ${attempts}/${maxAttempts}`);
+
+                try {
+                    loginSuccess = await this.checkLoginStatus();
+                    if (loginSuccess) {
+                        break;
+                    } else {
+                        context.log('warn', `Login check failed, attempt ${attempts}/${maxAttempts}`);
+                        if (attempts < maxAttempts) {
+                            await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds before retry
+                        }
+                    }
+                } catch (error) {
+                    context.log('warn', `Login check error on attempt ${attempts}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    if (attempts < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    }
+                }
+            }
 
             if (loginSuccess) {
                 this.isLoggedIn = true;
@@ -342,7 +535,15 @@ export class LinkedInService {
                 context.complete({ success: true });
                 return true;
             } else {
-                throw new Error('Login failed - please check your credentials');
+                // Try to get more information about what went wrong
+                const currentUrl = await this.page.url();
+                const pageTitle = await this.page.title();
+                context.log('error', 'Login failed after multiple attempts', {
+                    currentUrl,
+                    pageTitle,
+                    attempts
+                });
+                throw new Error(`Login failed after ${maxAttempts} attempts. Current URL: ${currentUrl}, Page Title: ${pageTitle}. Please check your credentials and try again.`);
             }
 
         } catch (error) {
@@ -442,40 +643,85 @@ export class LinkedInService {
         try {
             console.log(`Scraping profile: ${profileUrl}`);
 
-            await this.page.goto(profileUrl, {
-                waitUntil: 'networkidle',
-                timeout: this.config.timeout
-            });
+            // Try with networkidle first, fallback to domcontentloaded if it times out
+            try {
+                await this.page.goto(profileUrl, {
+                    waitUntil: 'networkidle',
+                    timeout: this.config.profileTimeout || this.config.timeout
+                });
+            } catch (networkIdleError) {
+                console.log(`Networkidle timeout for ${profileUrl}, trying domcontentloaded...`);
+                try {
+                    await this.page.goto(profileUrl, {
+                        waitUntil: 'domcontentloaded',
+                        timeout: 30000 // Shorter timeout for fallback
+                    });
+                    // Wait a bit more for dynamic content
+                    await this.page.waitForTimeout(3000);
+                } catch (domError) {
+                    console.log(`DOM content loaded timeout for ${profileUrl}, trying basic load...`);
+                    await this.page.goto(profileUrl, {
+                        waitUntil: 'load',
+                        timeout: 15000 // Even shorter timeout for basic load
+                    });
+                    await this.page.waitForTimeout(5000);
+                }
+            }
 
             await this.randomDelay();
 
-            // Extract profile information
+            // Extract profile information using text-based approach
             const profileData = await this.page.evaluate(() => {
-                const getTextContent = (selector: string): string => {
-                    const element = document.querySelector(selector);
-                    return element ? element.textContent?.trim() || '' : '';
-                };
+                const bodyText = document.body.textContent || '';
 
-                const name = getTextContent('h1.text-heading-xlarge') ||
-                    getTextContent('.pv-text-details__left-panel h1') ||
-                    getTextContent('[data-generated-suggestion-target] h1');
+                // Extract name - look for the pattern after navigation elements
+                let name = '';
+                // Look for name pattern after "Try Premium" or before job titles
+                const nameMatch = bodyText.match(/(?:Try Premium for ₹\d+)([^·\n]*?)([A-Z][a-z]+ [A-Z][a-z]+)(?=Corporate|Senior|Lead|Manager|Director|Specialist|Recruiter|Talent|HR|Human|Resources|Developer|Engineer|Designer|Analyst|Consultant|Coordinator|Executive|Officer|Assistant|Associate|Head|Chief|VP|Vice|President|CEO|CTO|CFO|COO|Founder|Owner|Freelancer|Contractor|Student|Graduate|Intern|Trainee|Apprentice|Volunteer|Self-employed|Unemployed|Retired|Looking|Available|Open|Seeking|Searching|Job|Work|Career|Professional|Business|Entrepreneur|Startup)/);
+                if (nameMatch && nameMatch[2]) {
+                    name = nameMatch[2].trim();
+                } else {
+                    // Fallback: look for any name pattern, but exclude common navigation terms
+                    const fallbackMatch = bodyText.match(/([A-Z][a-z]+ [A-Z][a-z]+)(?=Corporate|Senior|Lead|Manager|Director|Specialist|Recruiter|Talent|HR|Human|Resources|Developer|Engineer|Designer|Analyst|Consultant|Coordinator|Executive|Officer|Assistant|Associate|Head|Chief|VP|Vice|President|CEO|CTO|CFO|COO|Founder|Owner|Freelancer|Contractor|Student|Graduate|Intern|Trainee|Apprentice|Volunteer|Self-employed|Unemployed|Retired|Looking|Available|Open|Seeking|Searching|Job|Work|Career|Professional|Business|Entrepreneur|Startup)/);
+                    if (fallbackMatch && !['My Network', 'Skip Main', 'For Business', 'Try Premium'].includes(fallbackMatch[1])) {
+                        name = fallbackMatch[1].trim();
+                    }
+                }
 
-                const headline = getTextContent('.text-body-medium.break-words') ||
-                    getTextContent('.pv-text-details__left-panel .text-body-medium') ||
-                    getTextContent('[data-generated-suggestion-target] .text-body-medium');
+                // Extract headline - look for job title patterns
+                let headline = '';
+                const headlineMatch = bodyText.match(/(Corporate|Senior|Lead|Manager|Director|Specialist|Recruiter|Talent|HR|Human|Resources|Developer|Engineer|Designer|Analyst|Consultant|Coordinator|Executive|Officer|Assistant|Associate|Head|Chief|VP|Vice|President|CEO|CTO|CFO|COO|Founder|Owner|Freelancer|Contractor|Student|Graduate|Intern|Trainee|Apprentice|Volunteer|Self-employed|Unemployed|Retired|Looking|Available|Open|Seeking|Searching|Job|Work|Career|Professional|Business|Entrepreneur|Startup)[^·\n]*/);
+                if (headlineMatch) {
+                    headline = headlineMatch[0].trim();
+                }
 
-                const company = getTextContent('.pv-text-details__left-panel .pv-text-details__left-panel--with-top-margin .text-body-small') ||
-                    getTextContent('[data-generated-suggestion-target] .text-body-small');
+                // Extract company - look for company names after the headline
+                let company = '';
+                const companyMatch = bodyText.match(/(?:at|@|·)\s*([A-Z][^·\n]*?)(?:\s*·|\s*\||\s*$|\s*\n)/);
+                if (companyMatch) {
+                    company = companyMatch[1].trim();
+                }
 
-                const about = getTextContent('#about') ||
-                    getTextContent('.pv-about-section .pv-about__summary-text') ||
-                    getTextContent('[data-generated-suggestion-target] .pv-about__summary-text');
+                // Extract location - look for location patterns like "Bhopal, Madhya Pradesh, India"
+                let location = '';
+                const locationMatch = bodyText.match(/([A-Z][a-z]+(?:,\s*[A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:,\s*[A-Z][a-z]+)*)/);
+                if (locationMatch) {
+                    location = locationMatch[1].trim();
+                }
 
-                const location = getTextContent('.pv-text-details__left-panel .text-body-small.inline.t-black--light.break-words') ||
-                    getTextContent('[data-generated-suggestion-target] .text-body-small');
+                // Extract connections - look for connection count like "500+connections"
+                let connections = '';
+                const connectionsMatch = bodyText.match(/(\d+)\+?\s*connections?/i);
+                if (connectionsMatch) {
+                    connections = connectionsMatch[1] + '+ connections';
+                }
 
-                const connections = getTextContent('.pv-top-card--list-bullet .pv-top-card--list-bullet .t-bold') ||
-                    getTextContent('[data-generated-suggestion-target] .t-bold');
+                // Extract about section - look for "About" section
+                let about = '';
+                const aboutMatch = bodyText.match(/About[^·\n]*(?:I am|I'm|I have|I work|I specialize|I focus|I help|I provide|I offer|I create|I build|I develop|I design|I manage|I lead|I coordinate|I organize|I plan|I execute|I implement|I deliver|I achieve|I accomplish|I succeed|I excel|I thrive|I grow|I learn|I improve|I enhance|I optimize|I streamline|I automate|I innovate)[^·\n]*/i);
+                if (aboutMatch) {
+                    about = aboutMatch[0].trim();
+                }
 
                 // Extract experience
                 const experienceElements = document.querySelectorAll('.pv-entity__summary-info h3, .pv-entity__summary-info .pv-entity__secondary-title');
@@ -497,10 +743,27 @@ export class LinkedInService {
                 };
             });
 
-            // Validate that we got meaningful data
+            // Enhanced validation with better error reporting
+            console.log('Extracted profile data:', {
+                name: profileData.name,
+                headline: profileData.headline,
+                company: profileData.company,
+                location: profileData.location,
+                hasAbout: !!profileData.about,
+                experienceCount: profileData.experience.length,
+                connections: profileData.connections
+            });
+
+            // More flexible validation - accept profile if we have at least name OR headline
             if (!profileData.name || profileData.name.length < 2) {
-                console.warn(`Failed to extract meaningful data from ${profileUrl}`);
-                return null;
+                if (!profileData.headline || profileData.headline.length < 2) {
+                    console.warn(`Failed to extract meaningful data from ${profileUrl}`);
+                    return null;
+                } else {
+                    // If we have headline but no name, try to extract name from headline or use a fallback
+                    console.warn(`No name found, but headline available: ${profileData.headline}`);
+                    profileData.name = profileData.headline.split(' at ')[0] || profileData.headline.split(' | ')[0] || 'Unknown';
+                }
             }
 
             console.log(`Successfully scraped profile: ${profileData.name}`);
@@ -508,7 +771,37 @@ export class LinkedInService {
 
         } catch (error) {
             console.error(`Failed to scrape profile ${profileUrl}:`, error);
+
+            // If it's a timeout error, try to recover the page
+            if (error instanceof Error && error.message.includes('Timeout')) {
+                console.log('Attempting page recovery due to timeout...');
+                try {
+                    // Try to reload the page
+                    await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 15000 });
+                    await this.page.waitForTimeout(2000);
+                    console.log('Page recovered successfully');
+                } catch (recoveryError) {
+                    console.warn('Page recovery failed:', recoveryError);
+                }
+            }
+
             return null;
+        }
+    }
+
+    /**
+     * Check if the current page is responsive
+     */
+    private async isPageResponsive(): Promise<boolean> {
+        if (!this.page) return false;
+
+        try {
+            // Try to get the page title as a quick responsiveness test
+            await this.page.title();
+            return true;
+        } catch (error) {
+            console.warn('Page appears unresponsive:', error);
+            return false;
         }
     }
 
@@ -522,29 +815,61 @@ export class LinkedInService {
         for (let i = 0; i < profileUrls.length; i++) {
             const url = profileUrls[i];
 
-            try {
-                console.log(`Scraping profile ${i + 1}/${profileUrls.length}`);
+            // Retry logic for individual profile scraping
+            let profile = null;
+            let retryCount = 0;
+            const maxRetries = 2;
 
-                const profile = await this.scrapeProfile(url);
-                if (profile) {
-                    profiles.push(profile);
+            while (retryCount <= maxRetries && !profile) {
+                try {
+                    if (retryCount > 0) {
+                        console.log(`Retrying profile ${i + 1}/${profileUrls.length} (attempt ${retryCount + 1}/${maxRetries + 1})`);
+                        // Longer delay on retry
+                        await new Promise(resolve => setTimeout(resolve, 10000));
+                    } else {
+                        console.log(`Scraping profile ${i + 1}/${profileUrls.length}`);
+                    }
+
+                    // Check if page is responsive before attempting to scrape
+                    const isResponsive = await this.isPageResponsive();
+                    if (!isResponsive) {
+                        console.log('Page appears unresponsive, attempting to recover...');
+                        try {
+                            await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 15000 });
+                            await this.page.waitForTimeout(3000);
+                        } catch (reloadError) {
+                            console.warn('Failed to reload page:', reloadError);
+                        }
+                    }
+
+                    profile = await this.scrapeProfile(url);
+
+                    if (profile) {
+                        profiles.push(profile);
+                        console.log(`✅ Successfully scraped profile: ${profile.name}`);
+                        break;
+                    } else if (retryCount < maxRetries) {
+                        console.log(`⚠️  No data extracted, retrying...`);
+                    }
+
+                } catch (error) {
+                    retryCount++;
+                    const errorMsg = `Failed to scrape ${url} (attempt ${retryCount}/${maxRetries + 1}): ${error instanceof Error ? error.message : 'Unknown error'}`;
+
+                    if (retryCount <= maxRetries) {
+                        console.warn(`⚠️  ${errorMsg} - retrying...`);
+                        // Progressive delay on retries
+                        await new Promise(resolve => setTimeout(resolve, 15000 * retryCount));
+                    } else {
+                        console.error(`❌ ${errorMsg} - giving up`);
+                        errors.push(errorMsg);
+                    }
                 }
+            }
 
-                // Add delay between profiles to avoid rate limiting
-                if (i < profileUrls.length - 1) {
-                    await this.randomDelay();
-                }
-
-            } catch (error) {
-                const errorMsg = `Failed to scrape ${url}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-                console.error(errorMsg);
-                errors.push(errorMsg);
-
-                // If we hit too many errors, take a longer break
-                if (errors.length > 5) {
-                    console.log('Too many errors, taking a longer break...');
-                    await new Promise(resolve => setTimeout(resolve, 30000)); // 30 second break
-                }
+            // Add delay between profiles to avoid rate limiting
+            if (i < profileUrls.length - 1) {
+                await this.randomDelay();
             }
         }
 

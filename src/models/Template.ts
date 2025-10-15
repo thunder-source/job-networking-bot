@@ -97,8 +97,7 @@ const templateSchema = new Schema<ITemplateDocument>({
     name: {
         type: String,
         required: true,
-        trim: true,
-        unique: true
+        trim: true
     },
     type: {
         type: String,
@@ -172,7 +171,7 @@ const templateSchema = new Schema<ITemplateDocument>({
 });
 
 // Indexes for better query performance
-templateSchema.index({ name: 1 });
+templateSchema.index({ name: 1 }, { unique: true });
 templateSchema.index({ type: 1 });
 templateSchema.index({ category: 1 });
 templateSchema.index({ isActive: 1 });
