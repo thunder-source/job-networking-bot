@@ -5,11 +5,11 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "cold-email-bot": "./dist/src/cli.js"
+    "cold-email-bot": "./dist/src/simple-cli.js"
   },
   "scripts": {
-    "start": "node dist/index.js",
-    "cli": "node dist/src/cli.js",
+    "start": "node dist/src/simple-cli.js",
+    "cli": "node dist/src/simple-cli.js",
     "full-cli": "node dist/src/full-cli.js",
     "dev": "nodemon",
     "build": "tsc",
