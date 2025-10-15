@@ -208,18 +208,17 @@ class ProcessMonitor {
             });
 
             // Send critical error alert
-            this.errorHandler.handleCriticalError(
-                this.errorHandler.createCriticalError(
-                    new Error(`Process ${name} exceeded maximum restart attempts`),
-                    {
-                        service: 'process-monitor',
-                        operation: 'restart-limit-exceeded',
-                        metadata: { name, restarts: stats.restarts, maxRestarts: config.maxRestarts }
-                    },
-                    'critical',
-                    false
-                )
-            );
+            const criticalError = new Error(`Process ${name} exceeded maximum restart attempts`) as any;
+            criticalError.context = {
+                service: 'process-monitor',
+                operation: 'restart-limit-exceeded',
+                metadata: { name, restarts: stats.restarts, maxRestarts: config.maxRestarts }
+            };
+            criticalError.errorId = `process-restart-limit-${Date.now()}`;
+            criticalError.timestamp = new Date();
+            criticalError.severity = 'critical';
+            criticalError.retryable = false;
+            this.errorHandler.handleCriticalError(criticalError);
         }
     }
 
@@ -239,18 +238,17 @@ class ProcessMonitor {
         }
 
         // Send error alert
-        this.errorHandler.handleCriticalError(
-            this.errorHandler.createCriticalError(
-                error,
-                {
-                    service: 'process-monitor',
-                    operation: 'process-error',
-                    metadata: { name }
-                },
-                'high',
-                true
-            )
-        );
+        const criticalError = error as any;
+        criticalError.context = {
+            service: 'process-monitor',
+            operation: 'process-error',
+            metadata: { name }
+        };
+        criticalError.errorId = `process-error-${Date.now()}`;
+        criticalError.timestamp = new Date();
+        criticalError.severity = 'high';
+        criticalError.retryable = true;
+        this.errorHandler.handleCriticalError(criticalError);
     }
 
     /**
@@ -371,9 +369,10 @@ class ProcessMonitor {
                 return;
             }
 
-            // Get process memory usage
-            const memoryUsage = process.memoryUsage?.() || { rss: 0 };
-            stats.memoryUsage = Math.round(memoryUsage.rss / 1024 / 1024); // MB
+            // Get process memory usage - use current process memory usage as approximation
+            // Note: ChildProcess doesn't have memoryUsage method, using current process as approximation
+            const currentProcessMemoryUsage = global.process.memoryUsage();
+            stats.memoryUsage = Math.round(currentProcessMemoryUsage.rss / 1024 / 1024); // MB
 
             // Check memory limits
             if (config.maxMemory && stats.memoryUsage > config.maxMemory) {

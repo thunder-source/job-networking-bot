@@ -29,7 +29,7 @@ systemCommand
             spinner.stop();
 
             console.log(chalk.bold('\n📊 System Health Report'));
-            console.log(chalk.gray('=' * 50));
+            console.log(chalk.gray('='.repeat(50)));
 
             // Overall status
             const statusColor = isHealthy ? chalk.green : chalk.red;
@@ -121,7 +121,7 @@ backupCommand
             const recentBackups = backups.slice(-limit).reverse();
 
             console.log(chalk.bold(`\n📋 Recent Backups (${recentBackups.length}/${backups.length}):`));
-            console.log(chalk.gray('=' * 80));
+            console.log(chalk.gray('='.repeat(80)));
 
             if (recentBackups.length === 0) {
                 console.log(chalk.yellow('No backups found'));
@@ -156,18 +156,22 @@ backupCommand
             console.log(chalk.yellow('⚠️  This will restore the database from backup:'), backupId);
             console.log(chalk.yellow('   This action will overwrite current data!'));
 
-            const { confirm } = await import('inquirer').then(m => m.default).catch(() => ({ default: {} }));
-            const answers = await confirm([
-                {
-                    type: 'confirm',
-                    name: 'confirm',
-                    message: 'Are you sure you want to continue?',
-                    default: false
+            try {
+                const inquirer = await import('inquirer');
+                const answers = await inquirer.default.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'confirm',
+                        message: 'Are you sure you want to continue?',
+                        default: false
+                    }
+                ]);
+                if (!answers.confirm) {
+                    console.log(chalk.blue('Restore cancelled'));
+                    return;
                 }
-            ]);
-
-            if (!answers.confirm) {
-                console.log(chalk.blue('Restore cancelled'));
+            } catch (error) {
+                console.log(chalk.red('Failed to get user confirmation. Use --force to skip confirmation.'));
                 return;
             }
         }
@@ -206,7 +210,7 @@ debugCommand
             const debugStats = errorManager.getDebugStatistics();
 
             console.log(chalk.bold('\n🐛 Debug Mode Status:'));
-            console.log(chalk.gray('=' * 40));
+            console.log(chalk.gray('='.repeat(40)));
 
             const statusColor = debugStats.enabled ? chalk.green : chalk.red;
             const statusIcon = debugStats.enabled ? '✅' : '❌';
@@ -290,7 +294,7 @@ processCommand
             const processStats = errorManager.getProcessStatistics();
 
             console.log(chalk.bold('\n🔄 Process Monitoring Status:'));
-            console.log(chalk.gray('=' * 40));
+            console.log(chalk.gray('='.repeat(40)));
 
             const statusColor = processStats.monitoringActive ? chalk.green : chalk.red;
             const statusIcon = processStats.monitoringActive ? '✅' : '❌';
@@ -324,7 +328,7 @@ errorCommand
             const errorStats = errorManager.getErrorStatistics();
 
             console.log(chalk.bold('\n🚨 Error Statistics:'));
-            console.log(chalk.gray('=' * 40));
+            console.log(chalk.gray('='.repeat(40)));
 
             console.log(`\n📊 Overview:`);
             console.log(`  • Total Errors: ${errorStats.totalErrors}`);
@@ -334,7 +338,7 @@ errorCommand
             if (Object.keys(errorStats.serviceStats).length > 0) {
                 console.log(`\n🔧 Service Breakdown:`);
                 Object.entries(errorStats.serviceStats).forEach(([service, count]) => {
-                    const countColor = count > 10 ? chalk.red : count > 5 ? chalk.yellow : chalk.green;
+                    const countColor = (count as number) > 10 ? chalk.red : (count as number) > 5 ? chalk.yellow : chalk.green;
                     console.log(`  • ${service}: ${countColor(count)} errors`);
                 });
             }
@@ -362,18 +366,22 @@ errorCommand
         if (!options.force) {
             console.log(chalk.yellow('⚠️  This will reset all error counts'));
 
-            const { confirm } = await import('inquirer').then(m => m.default).catch(() => ({ default: {} }));
-            const answers = await confirm([
-                {
-                    type: 'confirm',
-                    name: 'confirm',
-                    message: 'Are you sure you want to reset error counts?',
-                    default: false
+            try {
+                const inquirer = await import('inquirer');
+                const answers = await inquirer.default.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'confirm',
+                        message: 'Are you sure you want to reset error counts?',
+                        default: false
+                    }
+                ]);
+                if (!answers.confirm) {
+                    console.log(chalk.blue('Reset cancelled'));
+                    return;
                 }
-            ]);
-
-            if (!answers.confirm) {
-                console.log(chalk.blue('Reset cancelled'));
+            } catch (error) {
+                console.log(chalk.red('Failed to get user confirmation. Use --force to skip confirmation.'));
                 return;
             }
         }
@@ -403,7 +411,7 @@ systemCommand
     .action(async () => {
         try {
             console.log(chalk.bold('\n⚙️  Error Handling Configuration:'));
-            console.log(chalk.gray('=' * 50));
+            console.log(chalk.gray('='.repeat(50)));
 
             const config = defaultErrorHandlingConfig;
 

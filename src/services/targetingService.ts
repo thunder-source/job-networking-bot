@@ -766,9 +766,9 @@ export class TargetingService {
                 ...prospect,
                 relevanceScore: Math.min(score, 100),
                 matchingCriteria,
-                ...(passesFilters ? {} : { contactStatus: 'filtered' as const })
+                ...(passesFilters ? {} : { contactStatus: 'new' as const })
             };
-        }).filter(prospect => prospect.contactStatus !== 'filtered');
+        }).filter(prospect => prospect.contactStatus === 'new' || prospect.contactStatus === 'already_contacted' || prospect.contactStatus === 'duplicate');
     }
 
     /**
@@ -1110,7 +1110,7 @@ export class TargetingService {
                     profileCompleteness: parseFloat(values[headers.indexOf('Profile Completeness')] || '0'),
                     contactStatus: 'new',
                     tags: [],
-                    source: options.defaultSource || ContactSource.OTHER
+                    // source: options.defaultSource || ContactSource.OTHER
                 };
 
                 prospects.push(prospect);
@@ -1170,8 +1170,8 @@ export class TargetingService {
                     emailLookup: prospect.enrichedData?.emailAddress ? {
                         foundEmail: prospect.enrichedData.emailAddress,
                         confidence: 100,
-                        source: 'enriched',
-                        method: 'api',
+                        source: 'manual' as const,
+                        method: 'api' as const,
                         verified: false
                     } : undefined
                 };

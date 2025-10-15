@@ -59,11 +59,7 @@ const actionFileTransport = new DailyRotateFile({
     level: 'info',
     maxSize: '50m',
     maxFiles: '30d',
-    format: logFormat,
-    // Filter to only log action-related messages
-    filter: (info) => {
-        return info.category === 'action' || info.category === 'automation';
-    }
+    format: logFormat
 });
 
 // Daily rotate file transport for analytics
@@ -73,11 +69,7 @@ const analyticsFileTransport = new DailyRotateFile({
     level: 'info',
     maxSize: '30m',
     maxFiles: '90d',
-    format: logFormat,
-    // Filter to only log analytics-related messages
-    filter: (info) => {
-        return info.category === 'analytics' || info.category === 'metrics';
-    }
+    format: logFormat
 });
 
 // Daily rotate file transport for general info

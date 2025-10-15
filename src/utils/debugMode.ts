@@ -81,9 +81,8 @@ class DebugMode {
                     const avgDuration = recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length;
                     const slowOperations = recentMetrics.filter(m => m.duration > 1000); // > 1 second
 
-                    logger.performance('Performance summary', {
+                    logger.performance('Performance summary', Math.round(avgDuration), {
                         recentOperations: recentMetrics.length,
-                        averageDuration: Math.round(avgDuration),
                         slowOperations: slowOperations.length,
                         operations: recentMetrics.map(m => ({
                             operation: m.operation,
@@ -184,8 +183,7 @@ class DebugMode {
         this.performanceMetrics.push(metric);
 
         // Log performance metric
-        logger.performance(`Operation completed: ${operation}`, {
-            duration,
+        logger.performance(`Operation completed: ${operation}`, duration, {
             operation,
             metadata
         });

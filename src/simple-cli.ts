@@ -250,6 +250,10 @@ program.exitOverride();
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
+    // Don't treat help output as an error
+    if (error.message === '(outputHelp)' || error.message.includes('outputHelp')) {
+        process.exit(0);
+    }
     console.error(chalk.red('Uncaught Exception:'), error.message);
     process.exit(1);
 });
@@ -260,6 +264,14 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Parse command line arguments
-program.parse();
+try {
+    program.parse();
+} catch (error: any) {
+    // Handle help output gracefully
+    if (error.message === '(outputHelp)' || error.message.includes('outputHelp')) {
+        process.exit(0);
+    }
+    throw error;
+}
 
 export default program;
